@@ -1,3 +1,5 @@
+using System.Text.Json;
+using CvForge.Api.Domain;
 using CvForge.Api.Services;
 
 namespace CvForge.Api.Endpoints;
@@ -27,6 +29,23 @@ public static class ImportEndpoints
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
             await using var stream = file.OpenReadStream();
 
+            // Re-import of CvForge's own JSON export: no text extraction, no AI needed —
+            // it's already a CvDocument (same shape produced by GET /export/json).
+            if (extension == ".json")
+            {
+                try
+                {
+                    var imported = await JsonSerializer.DeserializeAsync<CvDocument>(stream);
+                    return imported is null
+                        ? Results.BadRequest(new { error = "Fichier JSON invalide." })
+                        : Results.Ok(imported);
+                }
+                catch (JsonException)
+                {
+                    return Results.BadRequest(new { error = "Fichier JSON invalide ou corrompu." });
+                }
+            }
+
             string rawText;
             try
             {
@@ -42,7 +61,7 @@ public static class ImportEndpoints
                 }
                 else
                 {
-                    return Results.BadRequest(new { error = "Format non supporté ou fichier corrompu (PDF ou DOCX uniquement)." });
+                    return Results.BadRequest(new { error = "Format non supporté ou fichier corrompu (PDF, DOCX, ou JSON exporté depuis CvForge)." });
                 }
             }
             catch (Exception)
