@@ -54,7 +54,8 @@ public class TxtExportService
                     Section(sb, CvTextHelpers.SectionLabel("projects", lang));
                     foreach (var p in doc.Projects)
                     {
-                        sb.AppendLine(p.Name);
+                        sb.AppendLine(string.IsNullOrWhiteSpace(p.Role) ? p.Name : $"{p.Name} - {p.Role}");
+                        if (!string.IsNullOrWhiteSpace(p.Url)) sb.AppendLine(p.Url);
                         if (!string.IsNullOrWhiteSpace(p.Description)) sb.AppendLine(p.Description);
                         if (p.Technologies.Count > 0) sb.AppendLine($"Technologies: {string.Join(", ", p.Technologies)}");
                         sb.AppendLine();

@@ -45,7 +45,9 @@ public class SingleColumnDocxBuilder(string font, bool useColor, bool uppercaseL
                     body.AppendChild(DocxHelpers.Heading(DocxHelpers.SectionLabel("projects", lang), primary, font, uppercaseLabels));
                     foreach (var project in doc.Projects)
                     {
-                        body.AppendChild(DocxHelpers.Line(project.Name, font, sizeHalfPt: 22, bold: true));
+                        var projectTitle = string.IsNullOrWhiteSpace(project.Role) ? project.Name : $"{project.Name} · {project.Role}";
+                        body.AppendChild(DocxHelpers.Line(projectTitle, font, sizeHalfPt: 22, bold: true));
+                        if (!string.IsNullOrWhiteSpace(project.Url)) body.AppendChild(DocxHelpers.Line(project.Url, font, sizeHalfPt: 18, italic: true, colorHex: secondary));
                         if (!string.IsNullOrWhiteSpace(project.Description)) body.AppendChild(DocxHelpers.Line(project.Description, font, spacingAfter: "40"));
                         if (project.Technologies.Count > 0) body.AppendChild(DocxHelpers.Line(string.Join(" · ", project.Technologies), font, sizeHalfPt: 18, italic: true, colorHex: secondary, spacingAfter: "200"));
                     }

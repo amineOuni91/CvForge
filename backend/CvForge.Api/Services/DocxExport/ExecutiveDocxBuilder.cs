@@ -124,7 +124,9 @@ public class ExecutiveDocxBuilder : IDocxTemplateBuilder
                     yield return DocxHelpers.Heading(DocxHelpers.SectionLabel("projects", lang), primary, Font);
                     foreach (var project in doc.Projects)
                     {
-                        yield return DocxHelpers.Line(project.Name, Font, sizeHalfPt: 22, bold: true);
+                        var projectTitle = string.IsNullOrWhiteSpace(project.Role) ? project.Name : $"{project.Name} · {project.Role}";
+                        yield return DocxHelpers.Line(projectTitle, Font, sizeHalfPt: 22, bold: true);
+                        if (!string.IsNullOrWhiteSpace(project.Url)) yield return DocxHelpers.Line(project.Url, Font, sizeHalfPt: 18, italic: true, colorHex: secondary);
                         if (!string.IsNullOrWhiteSpace(project.Description)) yield return DocxHelpers.Line(project.Description, Font, spacingAfter: "200");
                     }
                     break;

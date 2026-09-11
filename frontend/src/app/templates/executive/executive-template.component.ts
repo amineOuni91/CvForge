@@ -128,7 +128,8 @@ const MAIN_SECTIONS = ['summary', 'experiences', 'projects', 'education'];
                     <div class="cv-section-title">{{ label('projects') }}</div>
                     @for (project of doc.projects; track $index) {
                       <div class="cv-entry">
-                        <div class="cv-entry-title">{{ project.name }}</div>
+                        <div class="cv-entry-title">{{ project.role ? project.name + ' · ' + project.role : project.name }}</div>
+                        @if (project.url) { <div class="cv-entry-meta">{{ project.url }}</div> }
                         @if (project.description) { <p>{{ project.description }}</p> }
                       </div>
                     }

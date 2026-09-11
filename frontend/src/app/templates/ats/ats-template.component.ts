@@ -70,7 +70,8 @@ const LABELS: Record<string, { fr: string; en: string }> = {
                 <div style="font-weight: 700; border-bottom: 1px solid #000;">{{ label('projects') }}</div>
                 @for (project of doc.projects; track $index) {
                   <div class="cv-entry">
-                    <div class="cv-entry-title">{{ project.name }}</div>
+                    <div class="cv-entry-title">{{ project.role ? project.name + ' · ' + project.role : project.name }}</div>
+                    @if (project.url) { <div>{{ project.url }}</div> }
                     @if (project.description) { <p>{{ project.description }}</p> }
                   </div>
                 }
