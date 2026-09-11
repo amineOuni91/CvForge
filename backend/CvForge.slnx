@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="CvForge.Api/CvForge.Api.csproj" />
+  <Project Path="CvForge.Tests/CvForge.Tests.csproj" />
+</Solution>

@@ -1,0 +1,12 @@
+# .NET
+backend/**/bin/
+backend/**/obj/
+*.user
+
+# uploads (user photos, never committed)
+backend/CvForge.Api/uploads/
+
+# Angular / Node
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/

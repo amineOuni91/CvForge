@@ -1,0 +1,88 @@
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+.cv-page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 12mm;
+  background: white;
+  color: #1e293b;
+  font-family: var(--cv-font, system-ui), sans-serif;
+  font-size: calc(10pt * var(--cv-scale, 1));
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
+.cv-page h1 {
+  font-size: calc(20pt * var(--cv-scale, 1));
+  font-weight: 700;
+  color: var(--cv-primary);
+  margin: 0;
+}
+
+.cv-page h2 {
+  font-size: calc(12pt * var(--cv-scale, 1));
+  font-weight: 600;
+  color: var(--cv-secondary);
+  margin: 0;
+}
+
+.cv-section {
+  margin-top: var(--cv-gap, 14px);
+}
+
+.cv-section-title {
+  font-size: calc(11pt * var(--cv-scale, 1));
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cv-primary);
+  border-bottom: 2px solid var(--cv-primary);
+  padding-bottom: 2px;
+  margin-bottom: 8px;
+  break-after: avoid;
+}
+
+.cv-entry {
+  margin-bottom: 10px;
+  break-inside: avoid;
+}
+
+.cv-entry-title {
+  font-weight: 600;
+  break-after: avoid;
+}
+
+.cv-entry-meta {
+  font-size: calc(9pt * var(--cv-scale, 1));
+  color: var(--cv-secondary);
+}
+
+.cv-page p {
+  orphans: 2;
+  widows: 2;
+}
+
+.cv-list {
+  margin: 4px 0 8px;
+  padding-left: 16px;
+}
+
+.cv-list-label {
+  font-size: calc(9pt * var(--cv-scale, 1));
+  font-weight: 600;
+  color: var(--cv-secondary);
+  margin-top: 4px;
+}
+
+.cv-tag {
+  display: inline-block;
+  font-size: calc(8.5pt * var(--cv-scale, 1));
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cv-primary) 12%, white);
+  color: var(--cv-primary);
+  margin: 0 4px 4px 0;
+}

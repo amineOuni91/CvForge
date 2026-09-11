@@ -1,0 +1,13 @@
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { ToastHost } from './ui/toast';
+
+@Component({
+  selector: 'app-root',
+  imports: [RouterOutlet, ToastHost],
+  template: `
+    <router-outlet />
+    <app-toast-host />
+  `,
+})
+export class App {}
