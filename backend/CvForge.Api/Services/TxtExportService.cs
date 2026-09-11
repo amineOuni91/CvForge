@@ -55,7 +55,8 @@ public class TxtExportService
                     foreach (var p in doc.Projects)
                     {
                         sb.AppendLine(string.IsNullOrWhiteSpace(p.Role) ? p.Name : $"{p.Name} - {p.Role}");
-                        if (!string.IsNullOrWhiteSpace(p.Url)) sb.AppendLine(p.Url);
+                        var meta = CvTextHelpers.Join(" - ", CvTextHelpers.FormatMonth(p.Date, lang), p.Url);
+                        if (meta.Length > 0) sb.AppendLine(meta);
                         if (!string.IsNullOrWhiteSpace(p.Description)) sb.AppendLine(p.Description);
                         if (p.Technologies.Count > 0) sb.AppendLine($"Technologies: {string.Join(", ", p.Technologies)}");
                         sb.AppendLine();

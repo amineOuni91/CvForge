@@ -47,7 +47,8 @@ public class SingleColumnDocxBuilder(string font, bool useColor, bool uppercaseL
                     {
                         var projectTitle = string.IsNullOrWhiteSpace(project.Role) ? project.Name : $"{project.Name} · {project.Role}";
                         body.AppendChild(DocxHelpers.Line(projectTitle, font, sizeHalfPt: 22, bold: true));
-                        if (!string.IsNullOrWhiteSpace(project.Url)) body.AppendChild(DocxHelpers.Line(project.Url, font, sizeHalfPt: 18, italic: true, colorHex: secondary));
+                        var projectMeta = CvTextHelpers.Join(" · ", CvTextHelpers.FormatMonth(project.Date, lang), project.Url);
+                        if (projectMeta.Length > 0) body.AppendChild(DocxHelpers.Line(projectMeta, font, sizeHalfPt: 18, italic: true, colorHex: secondary));
                         if (!string.IsNullOrWhiteSpace(project.Description)) body.AppendChild(DocxHelpers.Line(project.Description, font, spacingAfter: "40"));
                         if (project.Technologies.Count > 0) body.AppendChild(DocxHelpers.Line(string.Join(" · ", project.Technologies), font, sizeHalfPt: 18, italic: true, colorHex: secondary, spacingAfter: "200"));
                     }

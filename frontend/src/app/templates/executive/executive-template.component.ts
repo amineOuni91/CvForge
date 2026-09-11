@@ -130,7 +130,7 @@ const MAIN_SECTIONS = ['summary', 'experiences', 'projects', 'education'];
                     @for (project of doc.projects; track $index) {
                       <div class="cv-entry">
                         <div class="cv-entry-title">{{ project.role ? project.name + ' · ' + project.role : project.name }}</div>
-                        @if (project.url) { <div class="cv-entry-meta">{{ project.url }}</div> }
+                        @if (project.date || project.url) { <div class="cv-entry-meta">{{ joinFields(' · ', formatDate(project.date), project.url) }}</div> }
                         @if (project.description) { <p>{{ project.description }}</p> }
                       </div>
                     }

@@ -87,7 +87,7 @@ import { Skeleton } from '../../ui/skeleton';
                 } @else {
                   <a [routerLink]="['/editor', cv.id]" class="font-medium text-slate-800 hover:underline">{{ cv.name }}</a>
                 }
-                <p class="mt-1 text-xs text-slate-400">Mis à jour {{ cv.updatedAt | date }}</p>
+                <p class="mt-1 text-xs text-slate-400">Mis à jour {{ cv.updatedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
                 <div class="mt-2 flex gap-3 text-xs text-slate-500">
                   <button type="button" (click)="startRename(cv.id)" title="Renommer" class="transition-colors hover:text-slate-800">✎</button>
                   <button type="button" (click)="duplicate(cv.id)" title="Dupliquer" class="transition-colors hover:text-slate-800">⧉</button>

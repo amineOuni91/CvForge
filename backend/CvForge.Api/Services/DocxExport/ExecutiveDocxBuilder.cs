@@ -126,7 +126,8 @@ public class ExecutiveDocxBuilder : IDocxTemplateBuilder
                     {
                         var projectTitle = string.IsNullOrWhiteSpace(project.Role) ? project.Name : $"{project.Name} · {project.Role}";
                         yield return DocxHelpers.Line(projectTitle, Font, sizeHalfPt: 22, bold: true);
-                        if (!string.IsNullOrWhiteSpace(project.Url)) yield return DocxHelpers.Line(project.Url, Font, sizeHalfPt: 18, italic: true, colorHex: secondary);
+                        var projectMeta = CvTextHelpers.Join(" · ", CvTextHelpers.FormatMonth(project.Date, lang), project.Url);
+                        if (projectMeta.Length > 0) yield return DocxHelpers.Line(projectMeta, Font, sizeHalfPt: 18, italic: true, colorHex: secondary);
                         if (!string.IsNullOrWhiteSpace(project.Description)) yield return DocxHelpers.Line(project.Description, Font, spacingAfter: "200");
                     }
                     break;
