@@ -10,3 +10,6 @@ backend/CvForge.Api/uploads/
 frontend/node_modules/
 frontend/dist/
 frontend/.angular/
+
+# scratch files (not part of the app)
+.scratch/
