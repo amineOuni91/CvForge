@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using CvForge.Api.Domain;
+using CvForge.Api.Services;
 using CvForge.Tests.Infrastructure;
 
 namespace CvForge.Tests;
@@ -113,6 +114,69 @@ public class CvCrudTests(DatabaseFixture fixture)
         var json = await response.Content.ReadAsStringAsync();
 
         Assert.DoesNotContain("templateKey", json);
+    }
+
+    [Fact]
+    public async Task UploadPhoto_WithValidJpeg_PersistsAsDataUrl()
+    {
+        var client = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var created = await (await client.PostAsJsonAsync("/api/cvs", new { })).Content.ReadFromJsonAsync<CvSummaryDto>();
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10]), "file", "photo.jpg");
+
+        var response = await client.PostAsync($"/api/cvs/{created!.Id}/photo", content);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var reloaded = await client.GetFromJsonAsync<CvDto>($"/api/cvs/{created.Id}");
+        Assert.StartsWith("data:image/jpeg;base64,", reloaded!.Document.PersonalInfo.PhotoUrl);
+    }
+
+    [Fact]
+    public async Task UploadPhoto_WithNonImageContent_Returns400()
+    {
+        var client = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var created = await (await client.PostAsJsonAsync("/api/cvs", new { })).Content.ReadFromJsonAsync<CvSummaryDto>();
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent("not an image"u8.ToArray()), "file", "photo.jpg");
+
+        var response = await client.PostAsync($"/api/cvs/{created!.Id}/photo", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadPhoto_LargerThanLimit_Returns400()
+    {
+        var client = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var created = await (await client.PostAsJsonAsync("/api/cvs", new { })).Content.ReadFromJsonAsync<CvSummaryDto>();
+
+        var oversized = new byte[FileValidator.MaxPhotoSizeBytes + 1];
+        byte[] jpegMagic = [0xFF, 0xD8, 0xFF];
+        Array.Copy(jpegMagic, oversized, jpegMagic.Length);
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent(oversized), "file", "photo.jpg");
+
+        var response = await client.PostAsync($"/api/cvs/{created!.Id}/photo", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeletePhoto_ClearsPreviouslyUploadedPhoto()
+    {
+        var client = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var created = await (await client.PostAsJsonAsync("/api/cvs", new { })).Content.ReadFromJsonAsync<CvSummaryDto>();
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent([0xFF, 0xD8, 0xFF, 0xE0]), "file", "photo.jpg");
+        await client.PostAsync($"/api/cvs/{created!.Id}/photo", content);
+
+        var deleteResponse = await client.DeleteAsync($"/api/cvs/{created.Id}/photo");
+
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+        var reloaded = await client.GetFromJsonAsync<CvDto>($"/api/cvs/{created.Id}");
+        Assert.Null(reloaded!.Document.PersonalInfo.PhotoUrl);
     }
 
     private record CvSummaryDto(Guid Id, string Name, DateTime CreatedAt, DateTime UpdatedAt);

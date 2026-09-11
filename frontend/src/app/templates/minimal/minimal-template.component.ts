@@ -26,10 +26,13 @@ const LABELS: Record<string, { fr: string; en: string }> = {
       [style.--cv-font]="fontStack()"
       [style.--cv-scale]="doc.settings.fontScale"
     >
-      <header style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;">
-        <h1 style="font-weight: 400; letter-spacing: 0.03em;">{{ doc.personalInfo.firstName }} {{ doc.personalInfo.lastName }}</h1>
-        <p style="color: #6b7280; margin: 2px 0 0;">{{ doc.personalInfo.jobTitle }}</p>
-        <p class="cv-entry-meta">{{ contactLine(doc.personalInfo) }}</p>
+      <header style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+        <div>
+          <h1 style="font-weight: 400; letter-spacing: 0.03em;">{{ doc.personalInfo.firstName }} {{ doc.personalInfo.lastName }}</h1>
+          <p style="color: #6b7280; margin: 2px 0 0;">{{ doc.personalInfo.jobTitle }}</p>
+          <p class="cv-entry-meta">{{ contactLine(doc.personalInfo) }}</p>
+        </div>
+        @if (doc.personalInfo.photoUrl) { <img class="cv-photo" [src]="doc.personalInfo.photoUrl" alt="" /> }
       </header>
 
       @for (sectionId of visibleSections(); track sectionId) {

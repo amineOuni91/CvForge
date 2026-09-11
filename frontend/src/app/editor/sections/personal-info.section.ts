@@ -1,4 +1,7 @@
-import { Component, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Component, computed, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { API_BASE_URL } from '../../core/api-config';
 import { CvStore } from '../cv-store';
 import { PersonalInfo } from '../../models/cv-document';
 
@@ -6,6 +9,24 @@ import { PersonalInfo } from '../../models/cv-document';
   selector: 'app-personal-info-section',
   template: `
     @if (info(); as info) {
+      <div class="mb-3 flex items-center gap-3">
+        @if (info.photoUrl) {
+          <img [src]="info.photoUrl" alt="" class="h-16 w-16 rounded-full object-cover" />
+        } @else {
+          <div class="flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-xs text-slate-400">Photo</div>
+        }
+        <div class="flex flex-col gap-1">
+          <label class="cursor-pointer text-sm text-slate-600 hover:underline">
+            {{ uploading() ? 'Envoi...' : 'Choisir une photo' }}
+            <input type="file" accept="image/jpeg,image/png" class="hidden" [disabled]="uploading()" (change)="uploadPhoto($event)" />
+          </label>
+          @if (info.photoUrl) {
+            <button type="button" class="text-left text-sm text-red-600 hover:underline" (click)="removePhoto()">Retirer la photo</button>
+          }
+          <p class="text-xs text-slate-400">Facultatif — le CV reste inchangé sans photo.</p>
+          @if (photoError(); as msg) { <p class="text-xs text-red-600">{{ msg }}</p> }
+        </div>
+      </div>
       <div class="grid grid-cols-2 gap-3">
         <label class="text-sm">Prénom
           <input class="mt-1 w-full rounded border border-slate-300 px-2 py-1" [value]="info.firstName"
@@ -57,7 +78,10 @@ import { PersonalInfo } from '../../models/cv-document';
 })
 export class PersonalInfoSection {
   private readonly store = inject(CvStore);
+  private readonly http = inject(HttpClient);
   readonly info = computed(() => this.store.document()?.personalInfo);
+  readonly uploading = signal(false);
+  readonly photoError = signal<string | null>(null);
 
   value(event: Event): string {
     return (event.target as HTMLInputElement).value;
@@ -65,5 +89,36 @@ export class PersonalInfoSection {
 
   patch(changes: Partial<PersonalInfo>): void {
     this.store.update((doc) => ({ ...doc, personalInfo: { ...doc.personalInfo, ...changes } }));
+  }
+
+  async uploadPhoto(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    const cvId = this.store.cvId();
+    if (!file || !cvId) return;
+
+    this.uploading.set(true);
+    this.photoError.set(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const result = await firstValueFrom(
+        this.http.post<{ photoUrl: string }>(`${API_BASE_URL}/api/cvs/${cvId}/photo`, formData),
+      );
+      this.patch({ photoUrl: result.photoUrl });
+    } catch (err) {
+      const message = (err as { error?: { error?: string } })?.error?.error;
+      this.photoError.set(message ?? "Échec de l'envoi de la photo.");
+    } finally {
+      this.uploading.set(false);
+    }
+  }
+
+  async removePhoto(): Promise<void> {
+    const cvId = this.store.cvId();
+    if (!cvId) return;
+    await firstValueFrom(this.http.delete(`${API_BASE_URL}/api/cvs/${cvId}/photo`));
+    this.patch({ photoUrl: null });
   }
 }

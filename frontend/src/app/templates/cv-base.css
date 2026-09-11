@@ -77,6 +77,14 @@
   margin-top: 4px;
 }
 
+.cv-photo {
+  width: 24mm;
+  height: 24mm;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .cv-tag {
   display: inline-block;
   font-size: calc(8.5pt * var(--cv-scale, 1));

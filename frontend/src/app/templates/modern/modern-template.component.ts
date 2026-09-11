@@ -27,10 +27,13 @@ const SECTION_LABELS: Record<string, { fr: string; en: string }> = {
       [style.--cv-scale]="doc.settings.fontScale"
       [style.--cv-gap]="'14px'"
     >
-      <header>
-        <h1>{{ doc.personalInfo.firstName }} {{ doc.personalInfo.lastName }}</h1>
-        <h2>{{ doc.personalInfo.jobTitle }}</h2>
-        <p class="cv-entry-meta">{{ contactLine(doc.personalInfo) }}</p>
+      <header style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+        <div>
+          <h1>{{ doc.personalInfo.firstName }} {{ doc.personalInfo.lastName }}</h1>
+          <h2>{{ doc.personalInfo.jobTitle }}</h2>
+          <p class="cv-entry-meta">{{ contactLine(doc.personalInfo) }}</p>
+        </div>
+        @if (doc.personalInfo.photoUrl) { <img class="cv-photo" [src]="doc.personalInfo.photoUrl" alt="" /> }
       </header>
 
       @for (sectionId of visibleSections(); track sectionId) {

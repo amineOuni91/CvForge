@@ -85,6 +85,38 @@ public class AuthorizationTests(DatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task UploadPhoto_OwnedByAnotherUser_Returns404()
+    {
+        var owner = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var stranger = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+
+        var create = await owner.PostAsJsonAsync("/api/cvs", new { });
+        var cv = await create.Content.ReadFromJsonAsync<CvSummaryDto>();
+
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent([0xFF, 0xD8, 0xFF, 0xE0]);
+        content.Add(fileContent, "file", "photo.jpg");
+
+        var response = await stranger.PostAsync($"/api/cvs/{cv!.Id}/photo", content);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeletePhoto_OwnedByAnotherUser_Returns404()
+    {
+        var owner = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var stranger = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+
+        var create = await owner.PostAsJsonAsync("/api/cvs", new { });
+        var cv = await create.Content.ReadFromJsonAsync<CvSummaryDto>();
+
+        var response = await stranger.DeleteAsync($"/api/cvs/{cv!.Id}/photo");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task CvEndpoints_WithoutToken_Return401()
     {
         var anonymous = fixture.Factory.CreateClient();

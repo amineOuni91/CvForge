@@ -30,9 +30,12 @@ const MAIN_SECTIONS = ['summary', 'experiences', 'projects', 'education'];
       [style.--cv-font]="fontStack()"
       [style.--cv-scale]="doc.settings.fontScale"
     >
-      <header style="background: var(--cv-primary); color: white; padding: 14mm 12mm 10mm;">
-        <h1 style="color: white;">{{ doc.personalInfo.firstName }} {{ doc.personalInfo.lastName }}</h1>
-        <h2 style="color: #ffffffcc;">{{ doc.personalInfo.jobTitle }}</h2>
+      <header style="background: var(--cv-primary); color: white; padding: 14mm 12mm 10mm; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+        <div>
+          <h1 style="color: white;">{{ doc.personalInfo.firstName }} {{ doc.personalInfo.lastName }}</h1>
+          <h2 style="color: #ffffffcc;">{{ doc.personalInfo.jobTitle }}</h2>
+        </div>
+        @if (doc.personalInfo.photoUrl) { <img class="cv-photo" [src]="doc.personalInfo.photoUrl" alt="" /> }
       </header>
 
       <div style="display: flex;">

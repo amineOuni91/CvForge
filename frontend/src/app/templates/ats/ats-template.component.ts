@@ -15,9 +15,9 @@ const LABELS: Record<string, { fr: string; en: string }> = {
 };
 
 /**
- * ATS-safe by design: single column, plain text, no color, no tags/icons —
+ * ATS-safe by design: single column, plain text, no color, no tags/icons, no photo —
  * everything a parser can misread is deliberately left out (Settings.PrimaryColor
- * is intentionally NOT applied here, unlike the other 4 templates).
+ * and PersonalInfo.PhotoUrl are intentionally NOT applied here, unlike the other 4 templates).
  */
 @Component({
   selector: 'app-ats-template',

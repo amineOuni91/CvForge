@@ -26,10 +26,13 @@ const LABELS: Record<string, { fr: string; en: string }> = {
       [style.--cv-font]="'\\'JetBrains Mono\\', ui-monospace, monospace'"
       [style.--cv-scale]="doc.settings.fontScale"
     >
-      <header style="background: #0f172a; color: #e2e8f0; padding: 12mm 12mm 8mm;">
-        <h1 style="color: #e2e8f0;">{{ doc.personalInfo.firstName }} {{ doc.personalInfo.lastName }}</h1>
-        <h2 style="color: var(--cv-primary);">{{ doc.personalInfo.jobTitle }}</h2>
-        <p style="color: #94a3b8; font-size: 9pt;">{{ contactLine(doc.personalInfo) }}</p>
+      <header style="background: #0f172a; color: #e2e8f0; padding: 12mm 12mm 8mm; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+        <div>
+          <h1 style="color: #e2e8f0;">{{ doc.personalInfo.firstName }} {{ doc.personalInfo.lastName }}</h1>
+          <h2 style="color: var(--cv-primary);">{{ doc.personalInfo.jobTitle }}</h2>
+          <p style="color: #94a3b8; font-size: 9pt;">{{ contactLine(doc.personalInfo) }}</p>
+        </div>
+        @if (doc.personalInfo.photoUrl) { <img class="cv-photo" [src]="doc.personalInfo.photoUrl" alt="" /> }
       </header>
 
       <div style="padding: 8mm 12mm;">

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using CvForge.Api.Data;
 using CvForge.Api.Domain;
+using CvForge.Api.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -109,6 +110,57 @@ public static class CvEndpoints
             if (cv is null) return Results.NotFound();
 
             db.Cvs.Remove(cv);
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+
+        group.MapPost("/{id:guid}/photo", async (Guid id, HttpRequest request, ClaimsPrincipal principal, AppDbContext db, UserManager<AppUser> userManager) =>
+        {
+            if (!request.HasFormContentType) return Results.BadRequest(new { error = "Requête multipart attendue." });
+
+            var form = await request.ReadFormAsync();
+            var file = form.Files.GetFile("file");
+            if (file is null || file.Length == 0) return Results.BadRequest(new { error = "Aucun fichier fourni." });
+            if (file.Length > FileValidator.MaxPhotoSizeBytes) return Results.BadRequest(new { error = "Photo trop volumineuse (2 Mo maximum)." });
+
+            string dataUrl;
+            try
+            {
+                await using var stream = file.OpenReadStream();
+                string mime;
+                if (FileValidator.IsJpeg(stream)) mime = "image/jpeg";
+                else if (FileValidator.IsPng(stream)) mime = "image/png";
+                else return Results.BadRequest(new { error = "Format non supporté (JPEG ou PNG uniquement)." });
+
+                stream.Position = 0;
+                using var buffer = new MemoryStream();
+                await stream.CopyToAsync(buffer);
+                dataUrl = $"data:{mime};base64,{Convert.ToBase64String(buffer.ToArray())}";
+            }
+            catch (Exception)
+            {
+                // untrusted upload: valid magic bytes don't guarantee a well-formed image
+                return Results.BadRequest(new { error = "Fichier image illisible ou corrompu." });
+            }
+
+            var userId = userManager.GetUserId(principal)!;
+            var cv = await db.LoadOwnedCvAsync(userId, id);
+            if (cv is null) return Results.NotFound();
+
+            cv.Document.PersonalInfo.PhotoUrl = dataUrl;
+            cv.UpdatedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+            return Results.Ok(new { photoUrl = dataUrl });
+        });
+
+        group.MapDelete("/{id:guid}/photo", async (Guid id, ClaimsPrincipal principal, AppDbContext db, UserManager<AppUser> userManager) =>
+        {
+            var userId = userManager.GetUserId(principal)!;
+            var cv = await db.LoadOwnedCvAsync(userId, id);
+            if (cv is null) return Results.NotFound();
+
+            cv.Document.PersonalInfo.PhotoUrl = null;
+            cv.UpdatedAt = DateTime.UtcNow;
             await db.SaveChangesAsync();
             return Results.NoContent();
         });
