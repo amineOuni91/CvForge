@@ -13,3 +13,8 @@ frontend/.angular/
 
 # scratch files (not part of the app)
 .scratch/
+
+# Claude planning/tracking docs (not meant to be public)
+CLAUDE.md
+PLAN.md
+progress.md
