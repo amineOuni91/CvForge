@@ -38,9 +38,9 @@ import { Skeleton } from '../../ui/skeleton';
           [disabled]="importing()"
           class="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
         >
-          {{ importing() ? 'Import en cours...' : '⇪ Importer un CV (PDF/DOCX/JSON)' }}
+          {{ importing() ? 'Import en cours...' : '⇪ Importer un CV (JSON)' }}
         </button>
-        <input #fileInput type="file" accept=".pdf,.docx,.json" class="hidden" (change)="onFileSelected($event)" />
+        <input #fileInput type="file" accept=".json" class="hidden" (change)="onFileSelected($event)" />
       </div>
 
       @if (importError(); as msg) {
