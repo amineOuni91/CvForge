@@ -39,6 +39,10 @@ export class Print implements OnInit {
       }
     }
 
+    const info = this.document()?.personalInfo;
+    const fullName = `${info?.firstName ?? ''} ${info?.lastName ?? ''}`.trim();
+    document.title = fullName ? `${fullName} - CV` : 'CV';
+
     await document.fonts.ready;
     await new Promise((resolve) => requestAnimationFrame(resolve));
     window.__cvReady = true;
