@@ -133,7 +133,7 @@ public class ExecutiveDocxBuilder : IDocxTemplateBuilder
                     foreach (var edu in doc.Education)
                     {
                         yield return DocxHelpers.Line($"{edu.Degree} · {edu.School}", Font, sizeHalfPt: 22, bold: true);
-                        yield return DocxHelpers.Line($"{DocxHelpers.FormatMonth(edu.StartDate, lang)} → {DocxHelpers.FormatMonth(edu.EndDate, lang)}", Font, sizeHalfPt: 18, italic: true, colorHex: secondary, spacingAfter: "160");
+                        yield return DocxHelpers.Line(edu.GraduationYear, Font, sizeHalfPt: 18, italic: true, colorHex: secondary, spacingAfter: "160");
                     }
                     break;
             }

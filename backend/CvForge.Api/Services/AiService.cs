@@ -76,7 +76,7 @@ public class AiService
             "summary: string, " +
             "experiences: { position, company, city, country, startDate, endDate, description: string, isCurrent: boolean, technologies, missions, achievements: string[] }[], " +
             "projects: { name, description, role, url, date: string, technologies: string[] }[], " +
-            "education: { degree, school, city, country, startDate, endDate, description: string }[], " +
+            "education: { degree, school, city, country, graduationYear, description: string }[], " +
             "skillCategories: { name: string, skills: string[] }[], " +
             "languages: { name, level: string }[], " +
             "certifications: { name, issuer, date, url: string }[], " +

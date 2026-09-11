@@ -3,7 +3,7 @@ import { CvStore } from '../cv-store';
 import { EducationEntry } from '../../models/cv-document';
 
 const EMPTY_EDUCATION: EducationEntry = {
-  degree: '', school: '', city: '', country: '', startDate: '', endDate: null, description: '',
+  degree: '', school: '', city: '', country: '', graduationYear: '', description: '',
 };
 
 @Component({
@@ -21,15 +21,14 @@ const EMPTY_EDUCATION: EducationEntry = {
             </div>
             <button type="button" (click)="remove($index)" class="text-sm text-red-600">Supprimer</button>
           </div>
-          <div class="mb-2 grid grid-cols-4 gap-2">
+          <div class="mb-2 grid grid-cols-3 gap-2">
             <input class="rounded border border-slate-300 px-2 py-1 text-sm" placeholder="Ville"
                    [value]="edu.city" (input)="patch($index, { city: value($event) })" />
             <input class="rounded border border-slate-300 px-2 py-1 text-sm" placeholder="Pays"
                    [value]="edu.country" (input)="patch($index, { country: value($event) })" />
-            <input type="month" class="rounded border border-slate-300 px-2 py-1 text-sm"
-                   [value]="edu.startDate" (input)="patch($index, { startDate: value($event) })" />
-            <input type="month" class="rounded border border-slate-300 px-2 py-1 text-sm"
-                   [value]="edu.endDate ?? ''" (input)="patch($index, { endDate: value($event) })" />
+            <input type="number" min="1950" max="2099" placeholder="Année d'obtention"
+                   class="rounded border border-slate-300 px-2 py-1 text-sm"
+                   [value]="edu.graduationYear" (input)="patch($index, { graduationYear: value($event) })" />
           </div>
           <textarea rows="2" class="w-full rounded border border-slate-300 px-2 py-1 text-sm" placeholder="Description"
                     [value]="edu.description" (input)="patch($index, { description: textareaValue($event) })"></textarea>

@@ -56,7 +56,7 @@ public class SingleColumnDocxBuilder(string font, bool useColor, bool uppercaseL
                     foreach (var edu in doc.Education)
                     {
                         body.AppendChild(DocxHelpers.Line($"{edu.Degree} · {edu.School}", font, sizeHalfPt: 22, bold: true));
-                        body.AppendChild(DocxHelpers.Line($"{DocxHelpers.FormatMonth(edu.StartDate, lang)} → {DocxHelpers.FormatMonth(edu.EndDate, lang)}", font, sizeHalfPt: 18, italic: true, colorHex: secondary, spacingAfter: "160"));
+                        body.AppendChild(DocxHelpers.Line(edu.GraduationYear, font, sizeHalfPt: 18, italic: true, colorHex: secondary, spacingAfter: "160"));
                     }
                     break;
 

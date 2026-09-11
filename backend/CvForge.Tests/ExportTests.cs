@@ -83,7 +83,7 @@ public class ExportTests(DatabaseFixture fixture)
             },
         ],
         Projects = [new Project { Name = "Projet X", Description = "Un projet.", Technologies = ["Angular"] }],
-        Education = [new EducationEntry { Degree = "Master", School = "ESPRIT", StartDate = "2016-01", EndDate = "2018-01" }],
+        Education = [new EducationEntry { Degree = "Master", School = "ESPRIT", GraduationYear = "2018" }],
         SkillCategories = [new SkillCategory { Name = "Backend", Skills = ["C#", "SQL"] }],
         Languages = [new LanguageEntry { Name = "Français", Level = "C1" }],
         Certifications = [new Certification { Name = "Cert A", Issuer = "Issuer", Date = "2020-01" }],

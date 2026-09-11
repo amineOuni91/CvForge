@@ -82,10 +82,13 @@ public static partial class AtsAnalyzer
         MonthRegex().IsMatch(exp.StartDate) && (exp.IsCurrent || (exp.EndDate is not null && MonthRegex().IsMatch(exp.EndDate) && string.CompareOrdinal(exp.EndDate, exp.StartDate) >= 0));
 
     private static bool IsDateRangeConsistent(EducationEntry edu) =>
-        MonthRegex().IsMatch(edu.StartDate) && (edu.EndDate is null || (MonthRegex().IsMatch(edu.EndDate) && string.CompareOrdinal(edu.EndDate, edu.StartDate) >= 0));
+        YearRegex().IsMatch(edu.GraduationYear);
 
     private static bool HasDigit(string text) => text.Any(char.IsDigit);
 
     [GeneratedRegex(@"^\d{4}-\d{2}$")]
     private static partial Regex MonthRegex();
+
+    [GeneratedRegex(@"^\d{4}$")]
+    private static partial Regex YearRegex();
 }

@@ -66,7 +66,7 @@ public class TxtExportService
                     foreach (var edu in doc.Education)
                     {
                         sb.AppendLine($"{edu.Degree} - {edu.School}");
-                        sb.AppendLine($"{CvTextHelpers.FormatMonth(edu.StartDate, lang)} -> {CvTextHelpers.FormatMonth(edu.EndDate, lang)}");
+                        sb.AppendLine(edu.GraduationYear);
                     }
                     sb.AppendLine();
                     break;

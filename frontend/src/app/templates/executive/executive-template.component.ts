@@ -142,7 +142,7 @@ const MAIN_SECTIONS = ['summary', 'experiences', 'projects', 'education'];
                     @for (edu of doc.education; track $index) {
                       <div class="cv-entry">
                         <div class="cv-entry-title">{{ edu.degree }} · {{ edu.school }}</div>
-                        <div class="cv-entry-meta">{{ formatDate(edu.startDate) }} → {{ formatDate(edu.endDate) }}</div>
+                        <div class="cv-entry-meta">{{ edu.graduationYear }}</div>
                       </div>
                     }
                   </section>

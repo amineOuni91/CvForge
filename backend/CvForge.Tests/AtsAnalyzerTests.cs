@@ -28,7 +28,7 @@ public class AtsAnalyzerTests
                 Achievements = ["Réduit le temps de build de 40%", "Livré 12 fonctionnalités"],
             },
         ],
-        Education = [new EducationEntry { Degree = "Master", School = "EPITA", StartDate = "2015-09", EndDate = "2018-06" }],
+        Education = [new EducationEntry { Degree = "Master", School = "EPITA", GraduationYear = "2018" }],
         SkillCategories = [new SkillCategory { Name = "Backend", Skills = ["C#", ".NET", "SQL"] }],
         Languages = [new LanguageEntry { Name = "Français", Level = "Native" }],
         Certifications = [new Certification { Name = "AZ-204", Issuer = "Microsoft" }],

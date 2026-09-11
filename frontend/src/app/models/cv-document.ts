@@ -52,8 +52,7 @@ export interface EducationEntry {
   school: string;
   city: string;
   country: string;
-  startDate: string;
-  endDate?: string | null;
+  graduationYear: string;
   description: string;
 }
 

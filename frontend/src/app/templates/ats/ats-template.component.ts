@@ -84,7 +84,7 @@ const LABELS: Record<string, { fr: string; en: string }> = {
                 @for (edu of doc.education; track $index) {
                   <div class="cv-entry">
                     <div class="cv-entry-title">{{ edu.degree }}, {{ edu.school }}</div>
-                    <div>{{ formatDate(edu.startDate) }} - {{ formatDate(edu.endDate) }}</div>
+                    <div>{{ edu.graduationYear }}</div>
                   </div>
                 }
               </section>

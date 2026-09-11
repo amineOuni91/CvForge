@@ -75,8 +75,7 @@ public class EducationEntry
     public string School { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
     public string Country { get; set; } = string.Empty;
-    public string StartDate { get; set; } = string.Empty;
-    public string? EndDate { get; set; }
+    public string GraduationYear { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
 }
 
