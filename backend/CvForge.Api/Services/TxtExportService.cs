@@ -32,8 +32,8 @@ public class TxtExportService
                     foreach (var exp in doc.Experiences)
                     {
                         var end = exp.IsCurrent ? CvTextHelpers.PresentLabel(lang) : CvTextHelpers.FormatMonth(exp.EndDate, lang);
-                        sb.AppendLine($"{exp.Position} - {exp.Company}");
-                        sb.AppendLine($"{CvTextHelpers.FormatMonth(exp.StartDate, lang)} -> {end} - {exp.City}");
+                        sb.AppendLine(CvTextHelpers.Join(" - ", exp.Position, exp.Company));
+                        sb.AppendLine(CvTextHelpers.Join(" - ", $"{CvTextHelpers.FormatMonth(exp.StartDate, lang)} -> {end}", exp.City));
                         if (!string.IsNullOrWhiteSpace(exp.Description)) sb.AppendLine(exp.Description);
                         if (exp.Missions.Count > 0)
                         {
@@ -66,7 +66,7 @@ public class TxtExportService
                     Section(sb, CvTextHelpers.SectionLabel("education", lang));
                     foreach (var edu in doc.Education)
                     {
-                        sb.AppendLine($"{edu.Degree} - {edu.School}");
+                        sb.AppendLine(CvTextHelpers.Join(" - ", edu.Degree, edu.School));
                         sb.AppendLine(edu.GraduationYear);
                     }
                     sb.AppendLine();
@@ -80,13 +80,13 @@ public class TxtExportService
 
                 case "languages" when doc.Languages.Count > 0:
                     Section(sb, CvTextHelpers.SectionLabel("languages", lang));
-                    sb.AppendLine(string.Join(", ", doc.Languages.Select(l => $"{l.Name} ({l.Level})")));
+                    sb.AppendLine(string.Join(", ", doc.Languages.Select(l => CvTextHelpers.WithDetail(l.Name, l.Level))));
                     sb.AppendLine();
                     break;
 
                 case "certifications" when doc.Certifications.Count > 0:
                     Section(sb, CvTextHelpers.SectionLabel("certifications", lang));
-                    foreach (var c in doc.Certifications) sb.AppendLine($"{c.Name} - {c.Issuer} ({CvTextHelpers.FormatMonth(c.Date, lang)})");
+                    foreach (var c in doc.Certifications) sb.AppendLine(CvTextHelpers.WithDetail(CvTextHelpers.Join(" - ", c.Name, c.Issuer), CvTextHelpers.FormatMonth(c.Date, lang)));
                     sb.AppendLine();
                     break;
 

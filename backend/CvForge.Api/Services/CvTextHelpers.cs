@@ -36,4 +36,19 @@ public static class CvTextHelpers
         var months = lang == "fr" ? MonthsFr : MonthsEn;
         return $"{months[month - 1]} {parts[0]}";
     }
+
+    /// <summary>Joins non-blank fields with a separator, skipping blanks instead of leaving a dangling separator
+    /// (e.g. "Position · " when Company is empty). Mirrors templates/join-fields.ts on the frontend.</summary>
+    public static string Join(string separator, params string?[] parts) =>
+        string.Join(separator, parts.Where(p => !string.IsNullOrWhiteSpace(p)));
+
+    /// <summary>Appends a detail in parentheses only when both base and detail are present; falls back to
+    /// whichever one exists rather than rendering a bare "()" or "Name ()".</summary>
+    public static string WithDetail(string? baseText, string? detail)
+    {
+        var b = baseText?.Trim() ?? "";
+        var d = detail?.Trim() ?? "";
+        if (b.Length > 0 && d.Length > 0) return $"{b} ({d})";
+        return b.Length > 0 ? b : d;
+    }
 }

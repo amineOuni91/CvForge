@@ -2,6 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { CvDocument } from '../../models/cv-document';
 import { FONT_STACKS } from '../font-stacks';
 import { formatMonth } from '../format-month';
+import { joinFields } from '../join-fields';
 
 const SECTION_LABELS: Record<string, { fr: string; en: string }> = {
   summary: { fr: 'Profil', en: 'Profile' },
@@ -29,11 +30,7 @@ const SECTION_LABELS: Record<string, { fr: string; en: string }> = {
       <header>
         <h1>{{ doc.personalInfo.firstName }} {{ doc.personalInfo.lastName }}</h1>
         <h2>{{ doc.personalInfo.jobTitle }}</h2>
-        <p class="cv-entry-meta">
-          {{ doc.personalInfo.email }} · {{ doc.personalInfo.phone }} · {{ doc.personalInfo.city }}
-          @if (doc.personalInfo.linkedIn) { · {{ doc.personalInfo.linkedIn }} }
-          @if (doc.personalInfo.gitHub) { · {{ doc.personalInfo.gitHub }} }
-        </p>
+        <p class="cv-entry-meta">{{ contactLine(doc.personalInfo) }}</p>
       </header>
 
       @for (sectionId of visibleSections(); track sectionId) {
@@ -52,11 +49,8 @@ const SECTION_LABELS: Record<string, { fr: string; en: string }> = {
                 <div class="cv-section-title">{{ label('experiences') }}</div>
                 @for (exp of doc.experiences; track $index) {
                   <div class="cv-entry">
-                    <div class="cv-entry-title">{{ exp.position }} · {{ exp.company }}</div>
-                    <div class="cv-entry-meta">
-                      {{ formatDate(exp.startDate) }} → {{ exp.isCurrent ? (lang() === 'fr' ? 'Présent' : 'Present') : formatDate(exp.endDate) }}
-                      · {{ exp.city }}
-                    </div>
+                    <div class="cv-entry-title">{{ joinFields(' · ', exp.position, exp.company) }}</div>
+                    <div class="cv-entry-meta">{{ experienceMeta(exp) }}</div>
                     @if (exp.description) { <p>{{ exp.description }}</p> }
                     @if (exp.missions.length) {
                       <div class="cv-list-label">{{ lang() === 'fr' ? 'Missions' : 'Responsibilities' }}</div>
@@ -97,7 +91,7 @@ const SECTION_LABELS: Record<string, { fr: string; en: string }> = {
                 <div class="cv-section-title">{{ label('education') }}</div>
                 @for (edu of doc.education; track $index) {
                   <div class="cv-entry">
-                    <div class="cv-entry-title">{{ edu.degree }} · {{ edu.school }}</div>
+                    <div class="cv-entry-title">{{ joinFields(' · ', edu.degree, edu.school) }}</div>
                     <div class="cv-entry-meta">{{ edu.graduationYear }}</div>
                   </div>
                 }
@@ -122,7 +116,7 @@ const SECTION_LABELS: Record<string, { fr: string; en: string }> = {
               <section class="cv-section">
                 <div class="cv-section-title">{{ label('languages') }}</div>
                 @for (lang of doc.languages; track $index) {
-                  <span class="cv-tag">{{ lang.name }} — {{ lang.level }}</span>
+                  <span class="cv-tag">{{ joinFields(' — ', lang.name, lang.level) }}</span>
                 }
               </section>
             }
@@ -133,7 +127,7 @@ const SECTION_LABELS: Record<string, { fr: string; en: string }> = {
                 <div class="cv-section-title">{{ label('certifications') }}</div>
                 @for (cert of doc.certifications; track $index) {
                   <div class="cv-entry">
-                    <div class="cv-entry-title">{{ cert.name }} · {{ cert.issuer }}</div>
+                    <div class="cv-entry-title">{{ joinFields(' · ', cert.name, cert.issuer) }}</div>
                     <div class="cv-entry-meta">{{ formatDate(cert.date) }}</div>
                   </div>
                 }
@@ -172,5 +166,17 @@ export class ModernTemplateComponent {
 
   formatDate(value: string | null | undefined): string {
     return formatMonth(value, this.lang());
+  }
+
+  protected readonly joinFields = joinFields;
+
+  contactLine(info: CvDocument['personalInfo']): string {
+    return joinFields(' · ', info.email, info.phone, info.city, info.linkedIn, info.gitHub);
+  }
+
+  experienceMeta(exp: CvDocument['experiences'][number]): string {
+    const end = exp.isCurrent ? (this.lang() === 'fr' ? 'Présent' : 'Present') : this.formatDate(exp.endDate);
+    const range = `${this.formatDate(exp.startDate)} → ${end}`;
+    return joinFields(' · ', range, exp.city);
   }
 }

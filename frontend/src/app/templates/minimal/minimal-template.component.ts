@@ -2,6 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { CvDocument } from '../../models/cv-document';
 import { FONT_STACKS } from '../font-stacks';
 import { formatMonth } from '../format-month';
+import { joinFields, withDetail } from '../join-fields';
 
 const LABELS: Record<string, { fr: string; en: string }> = {
   summary: { fr: 'Profil', en: 'Profile' },
@@ -28,11 +29,7 @@ const LABELS: Record<string, { fr: string; en: string }> = {
       <header style="border-bottom: 1px solid #e5e7eb; padding-bottom: 8px;">
         <h1 style="font-weight: 400; letter-spacing: 0.03em;">{{ doc.personalInfo.firstName }} {{ doc.personalInfo.lastName }}</h1>
         <p style="color: #6b7280; margin: 2px 0 0;">{{ doc.personalInfo.jobTitle }}</p>
-        <p class="cv-entry-meta">
-          {{ doc.personalInfo.email }} · {{ doc.personalInfo.phone }} · {{ doc.personalInfo.city }}
-          @if (doc.personalInfo.linkedIn) { · {{ doc.personalInfo.linkedIn }} }
-          @if (doc.personalInfo.gitHub) { · {{ doc.personalInfo.gitHub }} }
-        </p>
+        <p class="cv-entry-meta">{{ contactLine(doc.personalInfo) }}</p>
       </header>
 
       @for (sectionId of visibleSections(); track sectionId) {
@@ -51,7 +48,7 @@ const LABELS: Record<string, { fr: string; en: string }> = {
                 <div style="font-size: 9pt; letter-spacing: 0.1em; color: #9ca3af; margin-bottom: 6px;">{{ label('experiences') }}</div>
                 @for (exp of doc.experiences; track $index) {
                   <div class="cv-entry">
-                    <div class="cv-entry-title">{{ exp.position }} — {{ exp.company }}</div>
+                    <div class="cv-entry-title">{{ joinFields(' — ', exp.position, exp.company) }}</div>
                     <div class="cv-entry-meta">
                       {{ formatDate(exp.startDate) }} – {{ exp.isCurrent ? (lang() === 'fr' ? 'Présent' : 'Present') : formatDate(exp.endDate) }}
                     </div>
@@ -94,7 +91,7 @@ const LABELS: Record<string, { fr: string; en: string }> = {
                 <div style="font-size: 9pt; letter-spacing: 0.1em; color: #9ca3af; margin-bottom: 6px;">{{ label('education') }}</div>
                 @for (edu of doc.education; track $index) {
                   <div class="cv-entry">
-                    <div class="cv-entry-title">{{ edu.degree }} — {{ edu.school }}</div>
+                    <div class="cv-entry-title">{{ joinFields(' — ', edu.degree, edu.school) }}</div>
                     <div class="cv-entry-meta">{{ edu.graduationYear }}</div>
                   </div>
                 }
@@ -106,7 +103,10 @@ const LABELS: Record<string, { fr: string; en: string }> = {
               <section class="cv-section">
                 <div style="font-size: 9pt; letter-spacing: 0.1em; color: #9ca3af; margin-bottom: 6px;">{{ label('skills') }}</div>
                 @for (cat of doc.skillCategories; track $index) {
-                  <p><strong>{{ cat.name }}</strong> — {{ cat.skills.join(', ') }}</p>
+                  <p>
+                    @if (cat.name) { <strong>{{ cat.name }}</strong> }
+                    @if (cat.skills.length) { {{ cat.name ? ' — ' : '' }}{{ cat.skills.join(', ') }} }
+                  </p>
                 }
               </section>
             }
@@ -124,7 +124,7 @@ const LABELS: Record<string, { fr: string; en: string }> = {
               <section class="cv-section">
                 <div style="font-size: 9pt; letter-spacing: 0.1em; color: #9ca3af; margin-bottom: 6px;">{{ label('certifications') }}</div>
                 @for (cert of doc.certifications; track $index) {
-                  <p>{{ cert.name }} — {{ cert.issuer }} ({{ formatDate(cert.date) }})</p>
+                  <p>{{ withDetail(joinFields(' — ', cert.name, cert.issuer), formatDate(cert.date)) }}</p>
                 }
               </section>
             }
@@ -153,7 +153,7 @@ export class MinimalTemplateComponent {
   });
 
   readonly languagesText = computed(() =>
-    this.document().languages.map((l) => `${l.name} (${l.level})`).join(' · '),
+    this.document().languages.map((l) => withDetail(l.name, l.level)).join(' · '),
   );
 
   label(sectionId: string): string {
@@ -162,5 +162,12 @@ export class MinimalTemplateComponent {
 
   formatDate(value: string | null | undefined): string {
     return formatMonth(value, this.lang());
+  }
+
+  protected readonly joinFields = joinFields;
+  protected readonly withDetail = withDetail;
+
+  contactLine(info: CvDocument['personalInfo']): string {
+    return joinFields(' · ', info.email, info.phone, info.city, info.linkedIn, info.gitHub);
   }
 }

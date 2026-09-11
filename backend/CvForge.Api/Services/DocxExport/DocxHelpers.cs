@@ -67,10 +67,11 @@ public static class DocxHelpers
     /// <summary>One experience entry: title/company, dates, description, missions/achievements, technologies.</summary>
     public static IEnumerable<OpenXmlElement> ExperienceBlock(Domain.Experience exp, string lang, string font, string secondaryColor)
     {
-        yield return Line($"{exp.Position} · {exp.Company}", font, sizeHalfPt: 22, bold: true);
+        yield return Line(CvTextHelpers.Join(" · ", exp.Position, exp.Company), font, sizeHalfPt: 22, bold: true);
 
         var end = exp.IsCurrent ? PresentLabel(lang) : FormatMonth(exp.EndDate, lang);
-        yield return Line($"{FormatMonth(exp.StartDate, lang)} → {end} · {exp.City}", font, sizeHalfPt: 18, italic: true, colorHex: secondaryColor, spacingAfter: "80");
+        var range = $"{FormatMonth(exp.StartDate, lang)} → {end}";
+        yield return Line(CvTextHelpers.Join(" · ", range, exp.City), font, sizeHalfPt: 18, italic: true, colorHex: secondaryColor, spacingAfter: "80");
 
         if (!string.IsNullOrWhiteSpace(exp.Description))
         {

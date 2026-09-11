@@ -2,6 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { CvDocument } from '../../models/cv-document';
 import { FONT_STACKS } from '../font-stacks';
 import { formatMonth } from '../format-month';
+import { joinFields } from '../join-fields';
 
 const LABELS: Record<string, { fr: string; en: string }> = {
   summary: { fr: 'Profil', en: 'Profile' },
@@ -38,7 +39,7 @@ const MAIN_SECTIONS = ['summary', 'experiences', 'projects', 'education'];
         <aside style="width: 35%; padding: 10mm 8mm; background: #f8fafc;">
           <p class="cv-entry-meta">{{ doc.personalInfo.email }}</p>
           <p class="cv-entry-meta">{{ doc.personalInfo.phone }}</p>
-          <p class="cv-entry-meta">{{ doc.personalInfo.city }}, {{ doc.personalInfo.country }}</p>
+          <p class="cv-entry-meta">{{ joinFields(', ', doc.personalInfo.city, doc.personalInfo.country) }}</p>
           @if (doc.personalInfo.linkedIn) { <p class="cv-entry-meta">{{ doc.personalInfo.linkedIn }}</p> }
           @if (doc.personalInfo.gitHub) { <p class="cv-entry-meta">{{ doc.personalInfo.gitHub }}</p> }
 
@@ -59,7 +60,7 @@ const MAIN_SECTIONS = ['summary', 'experiences', 'projects', 'education'];
                 @if (doc.languages.length) {
                   <section class="cv-section">
                     <div class="cv-section-title">{{ label('languages') }}</div>
-                    @for (l of doc.languages; track $index) { <p>{{ l.name }} — {{ l.level }}</p> }
+                    @for (l of doc.languages; track $index) { <p>{{ joinFields(' — ', l.name, l.level) }}</p> }
                   </section>
                 }
               }
@@ -100,7 +101,7 @@ const MAIN_SECTIONS = ['summary', 'experiences', 'projects', 'education'];
                     <div class="cv-section-title">{{ label('experiences') }}</div>
                     @for (exp of doc.experiences; track $index) {
                       <div class="cv-entry">
-                        <div class="cv-entry-title">{{ exp.position }} · {{ exp.company }}</div>
+                        <div class="cv-entry-title">{{ joinFields(' · ', exp.position, exp.company) }}</div>
                         <div class="cv-entry-meta">
                           {{ formatDate(exp.startDate) }} → {{ exp.isCurrent ? (lang() === 'fr' ? 'Présent' : 'Present') : formatDate(exp.endDate) }}
                         </div>
@@ -142,7 +143,7 @@ const MAIN_SECTIONS = ['summary', 'experiences', 'projects', 'education'];
                     <div class="cv-section-title">{{ label('education') }}</div>
                     @for (edu of doc.education; track $index) {
                       <div class="cv-entry">
-                        <div class="cv-entry-title">{{ edu.degree }} · {{ edu.school }}</div>
+                        <div class="cv-entry-title">{{ joinFields(' · ', edu.degree, edu.school) }}</div>
                         <div class="cv-entry-meta">{{ edu.graduationYear }}</div>
                       </div>
                     }
@@ -172,4 +173,6 @@ export class ExecutiveTemplateComponent {
   formatDate(value: string | null | undefined): string {
     return formatMonth(value, this.lang());
   }
+
+  protected readonly joinFields = joinFields;
 }

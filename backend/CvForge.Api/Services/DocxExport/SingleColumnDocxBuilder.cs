@@ -57,7 +57,7 @@ public class SingleColumnDocxBuilder(string font, bool useColor, bool uppercaseL
                     body.AppendChild(DocxHelpers.Heading(DocxHelpers.SectionLabel("education", lang), primary, font, uppercaseLabels));
                     foreach (var edu in doc.Education)
                     {
-                        body.AppendChild(DocxHelpers.Line($"{edu.Degree} · {edu.School}", font, sizeHalfPt: 22, bold: true));
+                        body.AppendChild(DocxHelpers.Line(CvTextHelpers.Join(" · ", edu.Degree, edu.School), font, sizeHalfPt: 22, bold: true));
                         body.AppendChild(DocxHelpers.Line(edu.GraduationYear, font, sizeHalfPt: 18, italic: true, colorHex: secondary, spacingAfter: "160"));
                     }
                     break;
@@ -73,13 +73,13 @@ public class SingleColumnDocxBuilder(string font, bool useColor, bool uppercaseL
 
                 case "languages" when doc.Languages.Count > 0:
                     body.AppendChild(DocxHelpers.Heading(DocxHelpers.SectionLabel("languages", lang), primary, font, uppercaseLabels));
-                    body.AppendChild(DocxHelpers.Line(string.Join(" · ", doc.Languages.Select(l => $"{l.Name} — {l.Level}")), font, spacingAfter: "200"));
+                    body.AppendChild(DocxHelpers.Line(string.Join(" · ", doc.Languages.Select(l => CvTextHelpers.Join(" — ", l.Name, l.Level))), font, spacingAfter: "200"));
                     break;
 
                 case "certifications" when doc.Certifications.Count > 0:
                     body.AppendChild(DocxHelpers.Heading(DocxHelpers.SectionLabel("certifications", lang), primary, font, uppercaseLabels));
                     foreach (var cert in doc.Certifications)
-                        body.AppendChild(DocxHelpers.Line($"{cert.Name} · {cert.Issuer} ({DocxHelpers.FormatMonth(cert.Date, lang)})", font, spacingAfter: "80"));
+                        body.AppendChild(DocxHelpers.Line(CvTextHelpers.WithDetail(CvTextHelpers.Join(" · ", cert.Name, cert.Issuer), DocxHelpers.FormatMonth(cert.Date, lang)), font, spacingAfter: "80"));
                     break;
 
                 case "interests" when doc.Interests.Count > 0:

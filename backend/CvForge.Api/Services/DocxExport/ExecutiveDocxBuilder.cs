@@ -72,7 +72,7 @@ public class ExecutiveDocxBuilder : IDocxTemplateBuilder
         var info = doc.PersonalInfo;
         yield return DocxHelpers.Line(info.Email, Font, sizeHalfPt: 18, spacingAfter: "40");
         yield return DocxHelpers.Line(info.Phone, Font, sizeHalfPt: 18, spacingAfter: "40");
-        yield return DocxHelpers.Line($"{info.City}, {info.Country}", Font, sizeHalfPt: 18, spacingAfter: "40");
+        yield return DocxHelpers.Line(CvTextHelpers.Join(", ", info.City, info.Country), Font, sizeHalfPt: 18, spacingAfter: "40");
         if (!string.IsNullOrWhiteSpace(info.LinkedIn)) yield return DocxHelpers.Line(info.LinkedIn, Font, sizeHalfPt: 18, spacingAfter: "40");
         if (!string.IsNullOrWhiteSpace(info.GitHub)) yield return DocxHelpers.Line(info.GitHub, Font, sizeHalfPt: 18, spacingAfter: "200");
 
@@ -90,7 +90,7 @@ public class ExecutiveDocxBuilder : IDocxTemplateBuilder
                     break;
                 case "languages" when doc.Languages.Count > 0:
                     yield return DocxHelpers.Heading(DocxHelpers.SectionLabel("languages", lang), doc.Settings.PrimaryColor, Font, underline: false);
-                    foreach (var l in doc.Languages) yield return DocxHelpers.Line($"{l.Name} — {l.Level}", Font, sizeHalfPt: 18, spacingAfter: "40");
+                    foreach (var l in doc.Languages) yield return DocxHelpers.Line(CvTextHelpers.Join(" — ", l.Name, l.Level), Font, sizeHalfPt: 18, spacingAfter: "40");
                     break;
                 case "certifications" when doc.Certifications.Count > 0:
                     yield return DocxHelpers.Heading(DocxHelpers.SectionLabel("certifications", lang), doc.Settings.PrimaryColor, Font, underline: false);
@@ -134,7 +134,7 @@ public class ExecutiveDocxBuilder : IDocxTemplateBuilder
                     yield return DocxHelpers.Heading(DocxHelpers.SectionLabel("education", lang), primary, Font);
                     foreach (var edu in doc.Education)
                     {
-                        yield return DocxHelpers.Line($"{edu.Degree} · {edu.School}", Font, sizeHalfPt: 22, bold: true);
+                        yield return DocxHelpers.Line(CvTextHelpers.Join(" · ", edu.Degree, edu.School), Font, sizeHalfPt: 22, bold: true);
                         yield return DocxHelpers.Line(edu.GraduationYear, Font, sizeHalfPt: 18, italic: true, colorHex: secondary, spacingAfter: "160");
                     }
                     break;

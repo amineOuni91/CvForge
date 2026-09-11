@@ -1,6 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { CvDocument } from '../../models/cv-document';
 import { formatMonth } from '../format-month';
+import { joinFields, withDetail } from '../join-fields';
 
 const LABELS: Record<string, { fr: string; en: string }> = {
   summary: { fr: 'PROFIL', en: 'PROFILE' },
@@ -26,7 +27,7 @@ const LABELS: Record<string, { fr: string; en: string }> = {
       <header>
         <h1 style="color: #000;">{{ doc.personalInfo.firstName }} {{ doc.personalInfo.lastName }}</h1>
         <p>{{ doc.personalInfo.jobTitle }}</p>
-        <p>{{ doc.personalInfo.email }} | {{ doc.personalInfo.phone }} | {{ doc.personalInfo.city }}, {{ doc.personalInfo.country }}</p>
+        <p>{{ contactLine(doc.personalInfo) }}</p>
         @if (doc.personalInfo.linkedIn) { <p>{{ doc.personalInfo.linkedIn }}</p> }
         @if (doc.personalInfo.gitHub) { <p>{{ doc.personalInfo.gitHub }}</p> }
       </header>
@@ -47,7 +48,7 @@ const LABELS: Record<string, { fr: string; en: string }> = {
                 <div style="font-weight: 700; border-bottom: 1px solid #000;">{{ label('experiences') }}</div>
                 @for (exp of doc.experiences; track $index) {
                   <div class="cv-entry">
-                    <div class="cv-entry-title">{{ exp.position }}, {{ exp.company }} ({{ exp.city }})</div>
+                    <div class="cv-entry-title">{{ withDetail(joinFields(', ', exp.position, exp.company), exp.city) }}</div>
                     <div>{{ formatDate(exp.startDate) }} - {{ exp.isCurrent ? (lang() === 'fr' ? 'Present' : 'Present') : formatDate(exp.endDate) }}</div>
                     @if (exp.description) { <p>{{ exp.description }}</p> }
                     @if (exp.missions.length) {
@@ -84,7 +85,7 @@ const LABELS: Record<string, { fr: string; en: string }> = {
                 <div style="font-weight: 700; border-bottom: 1px solid #000;">{{ label('education') }}</div>
                 @for (edu of doc.education; track $index) {
                   <div class="cv-entry">
-                    <div class="cv-entry-title">{{ edu.degree }}, {{ edu.school }}</div>
+                    <div class="cv-entry-title">{{ joinFields(', ', edu.degree, edu.school) }}</div>
                     <div>{{ edu.graduationYear }}</div>
                   </div>
                 }
@@ -96,7 +97,7 @@ const LABELS: Record<string, { fr: string; en: string }> = {
               <section class="cv-section">
                 <div style="font-weight: 700; border-bottom: 1px solid #000;">{{ label('skills') }}</div>
                 @for (cat of doc.skillCategories; track $index) {
-                  <p>{{ cat.name }}: {{ cat.skills.join(', ') }}</p>
+                  <p>{{ joinFields(': ', cat.name, cat.skills.join(', ')) }}</p>
                 }
               </section>
             }
@@ -105,7 +106,7 @@ const LABELS: Record<string, { fr: string; en: string }> = {
             @if (doc.languages.length) {
               <section class="cv-section">
                 <div style="font-weight: 700; border-bottom: 1px solid #000;">{{ label('languages') }}</div>
-                @for (l of doc.languages; track $index) { <p>{{ l.name }}: {{ l.level }}</p> }
+                @for (l of doc.languages; track $index) { <p>{{ joinFields(': ', l.name, l.level) }}</p> }
               </section>
             }
           }
@@ -113,7 +114,7 @@ const LABELS: Record<string, { fr: string; en: string }> = {
             @if (doc.certifications.length) {
               <section class="cv-section">
                 <div style="font-weight: 700; border-bottom: 1px solid #000;">{{ label('certifications') }}</div>
-                @for (cert of doc.certifications; track $index) { <p>{{ cert.name }}, {{ cert.issuer }} ({{ formatDate(cert.date) }})</p> }
+                @for (cert of doc.certifications; track $index) { <p>{{ withDetail(joinFields(', ', cert.name, cert.issuer), formatDate(cert.date)) }}</p> }
               </section>
             }
           }
@@ -145,5 +146,12 @@ export class AtsTemplateComponent {
 
   formatDate(value: string | null | undefined): string {
     return formatMonth(value, this.lang());
+  }
+
+  protected readonly joinFields = joinFields;
+  protected readonly withDetail = withDetail;
+
+  contactLine(info: CvDocument['personalInfo']): string {
+    return joinFields(' | ', info.email, info.phone, joinFields(', ', info.city, info.country));
   }
 }
