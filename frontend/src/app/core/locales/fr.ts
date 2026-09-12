@@ -127,6 +127,8 @@ export const fr: Record<string, string> = {
   'admin.filter.noResults': 'Aucun utilisateur ne correspond à ces filtres.',
   'admin.bulk.selected': 'sélectionné(s)',
   'admin.bulk.clear': 'Annuler la sélection',
+  'admin.bulk.enterSelection': 'Sélectionner',
+  'admin.bulk.exitSelection': 'Terminer la sélection',
   'admin.table.role': 'Rôle',
   'admin.confirmed.yes': 'Oui',
   'admin.confirmed.no': 'Non',

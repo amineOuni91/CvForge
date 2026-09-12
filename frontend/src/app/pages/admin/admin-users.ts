@@ -113,9 +113,12 @@ type PendingAction =
           <option value="no">{{ 'admin.confirmed.no' | t }}</option>
         </select>
         <span class="text-xs text-slate-400 dark:text-slate-500">{{ filteredUsers().length }} / {{ users().length }}</span>
+        <button type="button" (click)="toggleSelectionMode()" class="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:text-slate-200">
+          {{ (selectionMode() ? 'admin.bulk.exitSelection' : 'admin.bulk.enterSelection') | t }}
+        </button>
       </div>
 
-      @if (selectedIds().size > 0) {
+      @if (selectionMode() && selectedIds().size > 0) {
         <div class="mx-auto mb-3 flex max-w-5xl flex-wrap items-center gap-3 rounded-lg bg-indigo-50 px-4 py-2 text-sm dark:bg-indigo-900/30">
           <span class="font-medium text-indigo-800 dark:text-indigo-200">{{ selectedIds().size }} {{ 'admin.bulk.selected' | t }}</span>
           <label class="flex items-center gap-1 text-xs text-indigo-700 dark:text-indigo-200">
@@ -146,9 +149,11 @@ type PendingAction =
         <table class="w-full text-left text-sm">
           <thead class="border-b border-slate-200 text-xs font-medium tracking-wide text-slate-400 uppercase dark:border-slate-700 dark:text-slate-500">
             <tr>
-              <th class="w-8 p-3">
-                <input type="checkbox" [checked]="allFilteredSelected()" (change)="toggleAll($any($event.target).checked)" />
-              </th>
+              @if (selectionMode()) {
+                <th class="w-8 p-3">
+                  <input type="checkbox" [checked]="allFilteredSelected()" (change)="toggleAll($any($event.target).checked)" />
+                </th>
+              }
               <th class="p-3">{{ 'admin.table.email' | t }}</th>
               <th class="p-3">{{ 'admin.table.confirmed' | t }}</th>
               <th class="p-3">{{ 'admin.table.cvCount' | t }}</th>
@@ -159,14 +164,16 @@ type PendingAction =
           <tbody>
             @if (filteredUsers().length === 0) {
               <tr>
-                <td colspan="6" class="p-6 text-center text-sm text-slate-400 dark:text-slate-500">{{ 'admin.filter.noResults' | t }}</td>
+                <td [attr.colspan]="selectionMode() ? 6 : 5" class="p-6 text-center text-sm text-slate-400 dark:text-slate-500">{{ 'admin.filter.noResults' | t }}</td>
               </tr>
             }
             @for (user of filteredUsers(); track user.id) {
               <tr class="border-b border-slate-100 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/40">
-                <td class="p-3">
-                  <input type="checkbox" [checked]="selectedIds().has(user.id)" (change)="toggleOne(user.id, $any($event.target).checked)" />
-                </td>
+                @if (selectionMode()) {
+                  <td class="p-3">
+                    <input type="checkbox" [checked]="selectedIds().has(user.id)" (change)="toggleOne(user.id, $any($event.target).checked)" />
+                  </td>
+                }
                 <td class="p-3">
                   <div class="flex items-center gap-3">
                     <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
@@ -235,7 +242,7 @@ type PendingAction =
               </tr>
               @if (expandedId() === user.id && expandedDetail(); as detail) {
                 <tr class="border-b border-slate-100 bg-slate-50 dark:border-slate-700 dark:bg-slate-900">
-                  <td colspan="6" class="p-4">
+                  <td [attr.colspan]="selectionMode() ? 6 : 5" class="p-4">
                     <form [formGroup]="detailForm" (ngSubmit)="saveDetail(user)" class="mb-4 grid grid-cols-2 gap-3">
                       <label class="text-sm dark:text-slate-200">{{ 'auth.displayName' | t }}
                         <input formControlName="displayName" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
@@ -340,6 +347,7 @@ export class AdminUsers implements OnInit {
       return true;
     });
   });
+  readonly selectionMode = signal(false);
   readonly selectedIds = signal<Set<string>>(new Set());
   readonly selectedUsers = computed(() => this.users().filter((u) => this.selectedIds().has(u.id)));
   readonly allFilteredSelected = computed(
@@ -414,6 +422,11 @@ export class AdminUsers implements OnInit {
 
   clearSelection(): void {
     this.selectedIds.set(new Set());
+  }
+
+  toggleSelectionMode(): void {
+    this.selectionMode.update((v) => !v);
+    if (!this.selectionMode()) this.clearSelection();
   }
 
   onBulkRoleSelect(value: string): void {
