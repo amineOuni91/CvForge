@@ -9,10 +9,11 @@ import { AuthService } from '../../core/auth.service';
 import { I18nService } from '../../core/i18n.service';
 import { API_BASE_URL } from '../../core/api-config';
 import { CvSummary } from '../../models/cv-document';
+import { Modal } from '../../ui/modal';
 
 @Component({
   selector: 'app-profile',
-  imports: [ReactiveFormsModule, RouterLink, TPipe, DatePipe],
+  imports: [ReactiveFormsModule, RouterLink, TPipe, DatePipe, Modal],
   template: `
     <main class="min-h-screen bg-slate-100 p-6 dark:bg-slate-900">
       <div class="mx-auto mb-6 max-w-6xl">
@@ -20,7 +21,7 @@ import { CvSummary } from '../../models/cv-document';
         <p class="text-sm text-slate-500 dark:text-slate-400">{{ auth.currentUser()?.email }}</p>
       </div>
 
-      <div class="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
+      <div class="mx-auto grid max-w-6xl gap-6" [class.md:grid-cols-4]="showConfirmColumn()" [class.md:grid-cols-3]="!showConfirmColumn()">
         <!-- Colonne 1 : Mes CV -->
         <div class="rounded-lg bg-white p-6 shadow-md dark:bg-slate-800">
           <h2 class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ 'profile.myCvs.title' | t }}</h2>
@@ -193,10 +194,98 @@ import { CvSummary } from '../../models/cv-document';
 
           <hr class="my-6 border-slate-200 dark:border-slate-700" />
 
-          <button (click)="logout()" class="w-full rounded border border-slate-300 py-2 text-slate-700 dark:border-slate-600 dark:text-slate-200">
+          <button (click)="confirmingLogout.set(true)" class="w-full rounded border border-slate-300 py-2 text-slate-700 dark:border-slate-600 dark:text-slate-200">
             {{ 'profile.logout' | t }}
           </button>
+
+          <hr class="my-6 border-slate-200 dark:border-slate-700" />
+
+          <h2 class="mb-1 text-sm font-semibold text-red-600 dark:text-red-400">{{ 'profile.deleteAccount.title' | t }}</h2>
+          <p class="mb-3 text-xs text-slate-400 dark:text-slate-500">{{ 'profile.deleteAccount.hint' | t }}</p>
+          <form [formGroup]="deleteAccountForm" (ngSubmit)="confirmingDeleteAccount.set(true)">
+            <label class="mb-3 block text-sm dark:text-slate-200">
+              {{ 'profile.password.old' | t }}
+              <input type="password" formControlName="password" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+            </label>
+
+            @if (deleteAccountMessage(); as msg) {
+              <p class="mb-3 text-sm text-red-600 dark:text-red-400">{{ msg }}</p>
+            }
+
+            <button
+              type="submit"
+              [disabled]="deleteAccountForm.invalid"
+              class="w-full rounded border border-red-300 py-2 text-sm text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
+            >
+              {{ 'profile.deleteAccount.submit' | t }}
+            </button>
+          </form>
         </div>
+
+        @if (confirmingLogout()) {
+          <app-modal (close)="confirmingLogout.set(false)">
+            <h2 class="mb-2 text-lg font-semibold text-slate-800 dark:text-slate-100">Se déconnecter ?</h2>
+            <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">Vous devrez vous reconnecter pour accéder à votre compte.</p>
+            <div class="flex justify-end gap-2">
+              <button type="button" (click)="confirmingLogout.set(false)" class="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 dark:text-slate-200">Annuler</button>
+              <button type="button" (click)="logout()" class="rounded bg-slate-800 px-3 py-1.5 text-sm text-white">Se déconnecter</button>
+            </div>
+          </app-modal>
+        }
+
+        @if (confirmingDeleteAccount()) {
+          <app-modal (close)="confirmingDeleteAccount.set(false)">
+            <h2 class="mb-2 text-lg font-semibold text-red-600 dark:text-red-400">{{ 'profile.deleteAccount.confirmTitle' | t }}</h2>
+            <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">{{ 'profile.deleteAccount.confirmHint' | t }}</p>
+            <div class="flex justify-end gap-2">
+              <button type="button" (click)="confirmingDeleteAccount.set(false)" class="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 dark:text-slate-200">Annuler</button>
+              <button type="button" (click)="deleteAccount()" [disabled]="deletingAccount()" class="rounded bg-red-600 px-3 py-1.5 text-sm text-white disabled:opacity-50">
+                {{ 'profile.deleteAccount.confirmSubmit' | t }}
+              </button>
+            </div>
+          </app-modal>
+        }
+
+        <!-- Colonne 4 : Confirmation du compte (si email non confirmé) -->
+        @if (showConfirmColumn()) {
+          <div class="rounded-lg bg-white p-6 shadow-md dark:bg-slate-800">
+            <h2 class="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ 'auth.confirm.title' | t }}</h2>
+            <p class="mb-3 text-xs text-slate-400 dark:text-slate-500">{{ 'auth.confirm.hint' | t }}</p>
+
+            <form [formGroup]="confirmForm" (ngSubmit)="confirmAccount()">
+              <label class="mb-3 block text-sm dark:text-slate-200">
+                {{ 'auth.confirm.code' | t }}
+                <input formControlName="code" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+              </label>
+
+              @if (confirmMessage(); as msg) {
+                <p class="mb-3 text-sm" [class.text-green-700]="confirmSuccess()" [class.dark:text-green-400]="confirmSuccess()"
+                   [class.text-red-600]="!confirmSuccess()" [class.dark:text-red-400]="!confirmSuccess()">{{ msg }}</p>
+              }
+
+              <button
+                type="submit"
+                [disabled]="confirmForm.invalid || confirming()"
+                class="w-full rounded bg-slate-800 py-2 text-white disabled:opacity-50"
+              >
+                {{ 'auth.confirm.submit' | t }}
+              </button>
+            </form>
+
+            <button
+              type="button"
+              (click)="resendConfirmation()"
+              [disabled]="resendingConfirmation()"
+              class="mt-3 w-full rounded border border-slate-300 py-2 text-sm text-slate-700 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200"
+            >
+              {{ 'auth.confirm.resend' | t }}
+            </button>
+
+            @if (confirmationResent()) {
+              <p class="mt-3 text-sm text-green-700 dark:text-green-400">{{ 'auth.confirm.resent' | t }}</p>
+            }
+          </div>
+        }
       </div>
     </main>
   `,
@@ -209,6 +298,10 @@ export class Profile implements OnInit {
 
   readonly saving = signal(false);
   readonly saved = signal(false);
+  readonly confirmingLogout = signal(false);
+  readonly confirmingDeleteAccount = signal(false);
+  readonly deletingAccount = signal(false);
+  readonly deleteAccountMessage = signal<string | null>(null);
   readonly changingPassword = signal(false);
   readonly passwordMessage = signal<string | null>(null);
   readonly passwordSuccess = signal(false);
@@ -223,6 +316,17 @@ export class Profile implements OnInit {
   readonly confirmingCode = signal(false);
   readonly emailMessage = signal<string | null>(null);
   readonly emailSuccess = signal(false);
+
+  readonly showConfirmColumn = computed(() => this.auth.currentUser()?.emailConfirmed === false);
+  readonly confirming = signal(false);
+  readonly confirmMessage = signal<string | null>(null);
+  readonly confirmSuccess = signal(false);
+  readonly resendingConfirmation = signal(false);
+  readonly confirmationResent = signal(false);
+
+  readonly confirmForm = new FormGroup({
+    code: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+  });
 
   readonly form = new FormGroup({
     displayName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -249,6 +353,10 @@ export class Profile implements OnInit {
 
   readonly emailForm = new FormGroup({
     newEmail: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
+  });
+
+  readonly deleteAccountForm = new FormGroup({
+    password: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
   });
 
   readonly codeForm = new FormGroup({
@@ -349,8 +457,55 @@ export class Profile implements OnInit {
     this.codeForm.reset();
   }
 
+  async confirmAccount(): Promise<void> {
+    if (this.confirmForm.invalid) return;
+    const email = this.auth.currentUser()?.email;
+    if (!email) return;
+    this.confirming.set(true);
+    this.confirmMessage.set(null);
+    try {
+      await this.auth.confirmEmailCode(email, this.confirmForm.getRawValue().code);
+      this.confirmSuccess.set(true);
+      this.confirmMessage.set(this.i18n.t('auth.confirm.success'));
+      this.confirmForm.reset();
+    } catch {
+      this.confirmSuccess.set(false);
+      this.confirmMessage.set(this.i18n.t('auth.confirm.error'));
+    } finally {
+      this.confirming.set(false);
+    }
+  }
+
+  async resendConfirmation(): Promise<void> {
+    const email = this.auth.currentUser()?.email;
+    if (!email) return;
+    this.resendingConfirmation.set(true);
+    this.confirmationResent.set(false);
+    try {
+      await this.auth.resendConfirmationEmail(email);
+      this.confirmationResent.set(true);
+    } finally {
+      this.resendingConfirmation.set(false);
+    }
+  }
+
   logout(): void {
     this.auth.logout();
     this.router.navigateByUrl('/login');
+  }
+
+  async deleteAccount(): Promise<void> {
+    this.deletingAccount.set(true);
+    this.deleteAccountMessage.set(null);
+    try {
+      await this.auth.deleteAccount(this.deleteAccountForm.getRawValue().password);
+      this.confirmingDeleteAccount.set(false);
+      await this.router.navigateByUrl('/login');
+    } catch {
+      this.confirmingDeleteAccount.set(false);
+      this.deleteAccountMessage.set(this.i18n.t('profile.deleteAccount.error'));
+    } finally {
+      this.deletingAccount.set(false);
+    }
   }
 }

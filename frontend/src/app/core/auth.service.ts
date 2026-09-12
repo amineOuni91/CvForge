@@ -9,6 +9,7 @@ export interface AuthUser {
   email: string;
   displayName: string;
   profileInfo: PersonalInfo;
+  emailConfirmed: boolean;
 }
 
 interface AccessTokenResponse {
@@ -88,6 +89,7 @@ export class AuthService {
 
   async confirmEmailCode(email: string, code: string): Promise<void> {
     await firstValueFrom(this.http.post(`${API_BASE_URL}/api/auth/confirm-email-code`, { email, code }));
+    if (this.currentUser()?.email === email) await this.fetchMe();
   }
 
   async updateProfile(displayName: string, personalInfo: PersonalInfo): Promise<void> {
@@ -101,6 +103,13 @@ export class AuthService {
     await firstValueFrom(
       this.http.post(`${API_BASE_URL}/api/auth/manage/info`, { oldPassword, newPassword }),
     );
+  }
+
+  async deleteAccount(password: string): Promise<void> {
+    await firstValueFrom(
+      this.http.delete(`${API_BASE_URL}/api/auth/me`, { body: { password } }),
+    );
+    this.logout();
   }
 
   async requestEmailChange(newEmail: string): Promise<void> {
@@ -122,7 +131,7 @@ export class AuthService {
     localStorage.removeItem(REFRESH_TOKEN_KEY);
   }
 
-  private async fetchMe(): Promise<void> {
+  async fetchMe(): Promise<void> {
     const user = await firstValueFrom(this.http.get<AuthUser>(`${API_BASE_URL}/api/auth/me`));
     this.currentUser.set(user);
   }

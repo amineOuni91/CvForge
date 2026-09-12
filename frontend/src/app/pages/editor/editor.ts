@@ -6,11 +6,13 @@ import { PreviewPane } from '../../editor/preview-pane.component';
 import { CustomizationPanel } from '../../editor/customization-panel.component';
 import { AtsPanel } from '../../editor/ats-panel.component';
 import { ToastService } from '../../core/toast.service';
+import { AuthService } from '../../core/auth.service';
 import { Skeleton } from '../../ui/skeleton';
+import { TPipe } from '../../core/t.pipe';
 
 @Component({
   selector: 'app-editor',
-  imports: [SectionList, PreviewPane, CustomizationPanel, AtsPanel, RouterLink, Skeleton],
+  imports: [SectionList, PreviewPane, CustomizationPanel, AtsPanel, RouterLink, Skeleton, TPipe],
   template: `
     <div class="flex h-screen flex-col">
       <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2 dark:border-slate-700 dark:bg-slate-800">
@@ -34,7 +36,8 @@ import { Skeleton } from '../../ui/skeleton';
           <button
             type="button"
             (click)="download()"
-            [disabled]="store.downloadingPdf()"
+            [disabled]="store.downloadingPdf() || accountUnconfirmed()"
+            [title]="accountUnconfirmed() ? ('confirmBanner.notice' | t) : ''"
             class="rounded bg-slate-800 px-3 py-1.5 text-sm text-white transition-colors hover:bg-slate-700 disabled:opacity-50"
           >
             {{ store.downloadingPdf() ? 'Génération...' : '⬇ Exporter' }}
@@ -115,6 +118,9 @@ export class Editor implements OnInit {
   protected readonly store = inject(CvStore);
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
+  protected readonly auth = inject(AuthService);
+
+  readonly accountUnconfirmed = computed(() => this.auth.currentUser()?.emailConfirmed === false);
 
   readonly mobileView = signal<'edit' | 'preview'>('edit');
   readonly leftTab = signal<'content' | 'design' | 'analysis'>('content');

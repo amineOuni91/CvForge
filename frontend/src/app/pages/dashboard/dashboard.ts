@@ -28,7 +28,8 @@ import { Skeleton } from '../../ui/skeleton';
         <button
           type="button"
           (click)="fileInput.click()"
-          [disabled]="importing()"
+          [disabled]="importing() || accountUnconfirmed()"
+          [title]="accountUnconfirmed() ? ('confirmBanner.notice' | t) : ''"
           class="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
         >
           {{ importing() ? 'Import en cours...' : '⇪ Importer un CV (JSON)' }}
@@ -114,7 +115,13 @@ import { Skeleton } from '../../ui/skeleton';
                 <div class="mt-1.5 flex gap-2.5 text-xs text-slate-500 dark:text-slate-400">
                   <button type="button" (click)="startRename(cv.id)" title="Renommer" class="transition-colors hover:text-slate-800 dark:hover:text-slate-100">✎</button>
                   <button type="button" (click)="duplicate(cv.id)" title="Dupliquer" class="transition-colors hover:text-slate-800 dark:hover:text-slate-100">⧉</button>
-                  <button type="button" (click)="downloadPdf(cv)" [disabled]="downloadingId() === cv.id" title="PDF" class="transition-colors hover:text-slate-800 dark:hover:text-slate-100">⤓</button>
+                  <button
+                    type="button"
+                    (click)="downloadPdf(cv)"
+                    [disabled]="downloadingId() === cv.id || accountUnconfirmed()"
+                    [title]="accountUnconfirmed() ? ('confirmBanner.notice' | t) : 'PDF'"
+                    class="transition-colors hover:text-slate-800 dark:hover:text-slate-100 disabled:opacity-40"
+                  >⤓</button>
                   <button type="button" (click)="askDelete(cv)" title="Supprimer" class="text-red-600 transition-colors hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">🗑</button>
                 </div>
               </div>
@@ -160,6 +167,8 @@ export class Dashboard implements OnInit, OnDestroy {
   readonly mostRecent = computed(() =>
     this.cvs().reduce((a, b) => ((a.updatedAt > b.updatedAt ? a : b)), this.cvs()[0]),
   );
+
+  readonly accountUnconfirmed = computed(() => this.auth.currentUser()?.emailConfirmed === false);
 
   async ngOnInit(): Promise<void> {
     await this.reload();

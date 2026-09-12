@@ -3,6 +3,7 @@ using System.Text;
 using CvForge.Api.Domain;
 using CvForge.Api.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace CvForge.Api.Endpoints;
@@ -16,7 +17,7 @@ public static class AuthEndpoints
             var user = userManager.GetUserAsync(principal).GetAwaiter().GetResult();
             return user is null
                 ? Results.NotFound()
-                : Results.Ok(new { user.Id, user.Email, user.DisplayName, user.ProfileInfo });
+                : Results.Ok(new { user.Id, user.Email, user.DisplayName, user.ProfileInfo, user.EmailConfirmed });
         }).RequireAuthorization();
 
         group.MapPatch("/me", async (UpdateProfileRequest request, ClaimsPrincipal principal, UserManager<AppUser> userManager) =>
@@ -27,7 +28,19 @@ public static class AuthEndpoints
             user.DisplayName = request.DisplayName;
             user.ProfileInfo = request.PersonalInfo;
             await userManager.UpdateAsync(user);
-            return Results.Ok(new { user.Id, user.Email, user.DisplayName, user.ProfileInfo });
+            return Results.Ok(new { user.Id, user.Email, user.DisplayName, user.ProfileInfo, user.EmailConfirmed });
+        }).RequireAuthorization();
+
+        group.MapDelete("/me", async ([FromBody] DeleteAccountRequest request, ClaimsPrincipal principal, UserManager<AppUser> userManager) =>
+        {
+            var user = await userManager.GetUserAsync(principal);
+            if (user is null) return Results.NotFound();
+
+            if (!await userManager.CheckPasswordAsync(user, request.Password))
+                return Results.BadRequest(new { error = "Mot de passe incorrect." });
+
+            var result = await userManager.DeleteAsync(user);
+            return result.Succeeded ? Results.Ok() : Results.BadRequest(new { error = "Échec de la suppression du compte." });
         }).RequireAuthorization();
 
         group.MapPost("/email-change/request", async (EmailChangeRequest request, ClaimsPrincipal principal, UserManager<AppUser> userManager, IEmailChangeSender emailSender) =>
@@ -52,7 +65,7 @@ public static class AuthEndpoints
             if (!result.Succeeded) return Results.BadRequest(new { error = "Code invalide ou expiré." });
 
             await userManager.SetUserNameAsync(user, request.NewEmail);
-            return Results.Ok(new { user.Id, user.Email, user.DisplayName, user.ProfileInfo });
+            return Results.Ok(new { user.Id, user.Email, user.DisplayName, user.ProfileInfo, user.EmailConfirmed });
         }).RequireAuthorization();
 
         // MapIdentityApi's built-in GET /confirmEmail expects the code straight off a clicked
@@ -81,6 +94,7 @@ public static class AuthEndpoints
 }
 
 public record UpdateProfileRequest(string DisplayName, PersonalInfo PersonalInfo);
+public record DeleteAccountRequest(string Password);
 public record EmailChangeRequest(string NewEmail);
 public record EmailChangeConfirmRequest(string NewEmail, string Code);
 public record ConfirmEmailCodeRequest(string Email, string Code);
