@@ -20,13 +20,15 @@ export class CvStore {
   readonly loading = signal(false);
   readonly downloadingPdf = signal(false);
   readonly exportFormat = signal<ExportFormat>('pdf');
+  readonly adminUserId = signal<string | null>(null);
 
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  async load(id: string): Promise<void> {
+  async load(id: string, adminUserId?: string): Promise<void> {
+    this.adminUserId.set(adminUserId ?? null);
     this.loading.set(true);
     try {
-      const cv = await firstValueFrom(this.http.get<CvDto>(`${API_BASE_URL}/api/cvs/${id}`));
+      const cv = await firstValueFrom(this.http.get<CvDto>(`${this.baseUrl()}/${id}`));
       this.cvId.set(cv.id);
       this.name.set(cv.name);
       this.document.set(cv.document);
@@ -71,6 +73,11 @@ export class CvStore {
     }
   }
 
+  private baseUrl(): string {
+    const admin = this.adminUserId();
+    return admin ? `${API_BASE_URL}/api/admin/users/${admin}/cvs` : `${API_BASE_URL}/api/cvs`;
+  }
+
   private scheduleSave(): void {
     if (this.saveTimeout) clearTimeout(this.saveTimeout);
     this.saveTimeout = setTimeout(() => this.save(), AUTOSAVE_DELAY_MS);
@@ -82,7 +89,7 @@ export class CvStore {
     if (!id || !doc) return;
     this.saveState.set('saving');
     try {
-      await firstValueFrom(this.http.put(`${API_BASE_URL}/api/cvs/${id}`, doc));
+      await firstValueFrom(this.http.put(`${this.baseUrl()}/${id}`, doc));
       this.saveState.set('saved');
     } catch {
       this.saveState.set('error');

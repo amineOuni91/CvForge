@@ -40,6 +40,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/admin/admin-users').then((m) => m.AdminUsers),
   },
   {
+    path: 'admin/users/:userId/cvs/:id',
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () => import('./pages/editor/editor').then((m) => m.Editor),
+  },
+  {
     // no authGuard: rendered by the backend's headless Chromium with data injected via
     // window.__cv, no auth token to attach in that context (see PdfService.RenderCvPdfAsync)
     path: 'print/:id',

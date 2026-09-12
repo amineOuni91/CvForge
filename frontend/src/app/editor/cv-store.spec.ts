@@ -77,6 +77,21 @@ describe('CvStore', () => {
     expect(store.saveState()).toBe('idle');
   });
 
+  it('load() with an adminUserId targets the admin CV endpoint for every subsequent call', async () => {
+    const loadPromise = store.load('cv-1', 'user-42');
+    const req = httpMock.expectOne(`${API_BASE_URL}/api/admin/users/user-42/cvs/cv-1`);
+    expect(req.request.method).toBe('GET');
+    req.flush(makeCvDto());
+    await loadPromise;
+
+    store.update((doc) => ({ ...doc, summary: 'Admin edit' }));
+    const savePromise = store.saveNow();
+    const putReq = httpMock.expectOne(`${API_BASE_URL}/api/admin/users/user-42/cvs/cv-1`);
+    expect(putReq.request.method).toBe('PUT');
+    putReq.flush({});
+    await savePromise;
+  });
+
   it('update() mutates the document immutably without touching the previous object', async () => {
     const loadPromise = store.load('cv-1');
     httpMock.expectOne(`${API_BASE_URL}/api/cvs/cv-1`).flush(makeCvDto());

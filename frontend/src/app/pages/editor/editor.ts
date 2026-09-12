@@ -149,7 +149,8 @@ export class Editor implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    if (id) this.store.load(id);
+    const adminUserId = this.route.snapshot.paramMap.get('userId') ?? undefined;
+    if (id) this.store.load(id, adminUserId);
   }
 
   async download(): Promise<void> {
