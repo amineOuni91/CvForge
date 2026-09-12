@@ -168,7 +168,9 @@ export class Dashboard implements OnInit, OnDestroy {
     this.cvs().reduce((a, b) => ((a.updatedAt > b.updatedAt ? a : b)), this.cvs()[0]),
   );
 
-  readonly accountUnconfirmed = computed(() => this.auth.currentUser()?.emailConfirmed === false);
+  readonly accountUnconfirmed = computed(
+    () => this.auth.currentUser()?.emailConfirmed === false && this.auth.currentUser()?.role !== 'admin',
+  );
 
   async ngOnInit(): Promise<void> {
     await this.reload();

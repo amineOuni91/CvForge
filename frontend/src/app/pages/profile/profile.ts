@@ -320,7 +320,9 @@ export class Profile implements OnInit {
   readonly emailMessage = signal<string | null>(null);
   readonly emailSuccess = signal(false);
 
-  readonly showConfirmColumn = computed(() => this.auth.currentUser()?.emailConfirmed === false);
+  readonly showConfirmColumn = computed(
+    () => this.auth.currentUser()?.emailConfirmed === false && this.auth.currentUser()?.role !== 'admin',
+  );
   readonly confirming = signal(false);
   readonly confirmMessage = signal<string | null>(null);
   readonly confirmSuccess = signal(false);

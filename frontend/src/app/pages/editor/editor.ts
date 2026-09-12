@@ -120,7 +120,9 @@ export class Editor implements OnInit {
   private readonly toast = inject(ToastService);
   protected readonly auth = inject(AuthService);
 
-  readonly accountUnconfirmed = computed(() => this.auth.currentUser()?.emailConfirmed === false);
+  readonly accountUnconfirmed = computed(
+    () => this.auth.currentUser()?.emailConfirmed === false && this.auth.currentUser()?.role !== 'admin',
+  );
 
   readonly mobileView = signal<'edit' | 'preview'>('edit');
   readonly leftTab = signal<'content' | 'design' | 'analysis'>('content');

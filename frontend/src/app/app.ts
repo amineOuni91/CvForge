@@ -21,7 +21,7 @@ function isConfirmEmailUrl(url: string): boolean {
   selector: 'app-root',
   imports: [RouterOutlet, ToastHost, ThemeToggle, HomeButton, ConfirmEmailBanner, LogoutButton, AdminButton],
   template: `
-    @if (!isPrintRoute() && !isConfirmEmailRoute() && auth.currentUser()?.emailConfirmed === false) {
+    @if (!isPrintRoute() && !isConfirmEmailRoute() && auth.currentUser()?.emailConfirmed === false && auth.currentUser()?.role !== 'admin') {
       <app-confirm-email-banner />
     }
     <router-outlet />
