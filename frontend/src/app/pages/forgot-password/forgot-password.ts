@@ -3,6 +3,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { RouterLink } from '@angular/router';
 import { TPipe } from '../../core/t.pipe';
 import { AuthService } from '../../core/auth.service';
+import { describeAuthError } from '../../core/auth-error';
 
 @Component({
   selector: 'app-forgot-password',
@@ -28,6 +29,9 @@ import { AuthService } from '../../core/auth.service';
         @if (sent()) {
           <p class="mb-3 text-sm text-green-700 dark:text-green-400">{{ 'auth.forgot.sent' | t }}</p>
         }
+        @if (error()) {
+          <p class="mb-3 text-sm text-red-600 dark:text-red-400">{{ error()! | t }}</p>
+        }
 
         <button
           type="submit"
@@ -51,6 +55,7 @@ export class ForgotPassword {
 
   readonly submitting = signal(false);
   readonly sent = signal(false);
+  readonly error = signal<string | null>(null);
 
   readonly form = new FormGroup({
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
@@ -59,9 +64,12 @@ export class ForgotPassword {
   async submit(): Promise<void> {
     if (this.form.invalid) return;
     this.submitting.set(true);
+    this.error.set(null);
     try {
       await this.auth.forgotPassword(this.form.getRawValue().email);
       this.sent.set(true);
+    } catch (err) {
+      this.error.set(describeAuthError(err, 'ForgotPassword', () => null));
     } finally {
       this.submitting.set(false);
     }

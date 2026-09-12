@@ -3,6 +3,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TPipe } from '../../core/t.pipe';
 import { AuthService } from '../../core/auth.service';
+import { describeAuthError } from '../../core/auth-error';
 
 @Component({
   selector: 'app-confirm-email',
@@ -100,8 +101,8 @@ export class ConfirmEmail {
       await this.auth.confirmEmailCode(email, code);
       this.success.set(true);
       setTimeout(() => this.router.navigateByUrl('/login'), 1500);
-    } catch {
-      this.error.set('auth.confirm.error');
+    } catch (err) {
+      this.error.set(describeAuthError(err, 'ConfirmEmail', (e) => (e.status === 400 ? 'auth.confirm.error' : null)));
     } finally {
       this.submitting.set(false);
     }
@@ -112,9 +113,12 @@ export class ConfirmEmail {
     if (!email) return;
     this.resending.set(true);
     this.resent.set(false);
+    this.error.set(null);
     try {
       await this.auth.resendConfirmationEmail(email);
       this.resent.set(true);
+    } catch (err) {
+      this.error.set(describeAuthError(err, 'ResendConfirmation', () => null));
     } finally {
       this.resending.set(false);
     }

@@ -3,10 +3,12 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { TPipe } from '../../core/t.pipe';
 import { AuthService } from '../../core/auth.service';
+import { describeAuthError } from '../../core/auth-error';
+import { PasswordInput } from '../../ui/password-input';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, TPipe],
+  imports: [ReactiveFormsModule, RouterLink, TPipe, PasswordInput],
   template: `
     <main class="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-900">
       <form
@@ -27,11 +29,7 @@ import { AuthService } from '../../core/auth.service';
 
         <label class="mb-4 block text-sm dark:text-slate-200">
           {{ 'auth.password' | t }}
-          <input
-            type="password"
-            formControlName="password"
-            class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
-          />
+          <app-password-input formControlName="password" class="mt-1" />
         </label>
 
         @if (error()) {
@@ -83,8 +81,8 @@ export class Login {
       const { email, password } = this.form.getRawValue();
       await this.auth.login(email, password);
       await this.router.navigateByUrl('/dashboard');
-    } catch {
-      this.error.set('auth.error.generic');
+    } catch (err) {
+      this.error.set(describeAuthError(err, 'Login', (e) => (e.status === 401 ? 'auth.error.invalidCredentials' : null)));
     } finally {
       this.submitting.set(false);
     }

@@ -3,10 +3,12 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { TPipe } from '../../core/t.pipe';
 import { AuthService } from '../../core/auth.service';
+import { describeAuthError, identityErrorCodes } from '../../core/auth-error';
+import { PasswordInput } from '../../ui/password-input';
 
 @Component({
   selector: 'app-reset-password',
-  imports: [ReactiveFormsModule, RouterLink, TPipe],
+  imports: [ReactiveFormsModule, RouterLink, TPipe, PasswordInput],
   template: `
     <main class="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-900">
       <form
@@ -36,11 +38,7 @@ import { AuthService } from '../../core/auth.service';
 
         <label class="mb-4 block text-sm dark:text-slate-200">
           {{ 'auth.reset.newPassword' | t }}
-          <input
-            type="password"
-            formControlName="newPassword"
-            class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
-          />
+          <app-password-input formControlName="newPassword" class="mt-1" />
         </label>
 
         @if (success()) {
@@ -90,8 +88,15 @@ export class ResetPassword {
       await this.auth.resetPassword(email, resetCode, newPassword);
       this.success.set(true);
       setTimeout(() => this.router.navigateByUrl('/login'), 1500);
-    } catch {
-      this.error.set('auth.error.generic');
+    } catch (err) {
+      this.error.set(
+        describeAuthError(err, 'ResetPassword', (e) => {
+          if (e.status !== 400) return null;
+          const codes = identityErrorCodes(e);
+          if (codes.some((c) => c.startsWith('Password'))) return 'auth.error.weakPassword';
+          return 'auth.error.invalidResetCode';
+        }),
+      );
     } finally {
       this.submitting.set(false);
     }
