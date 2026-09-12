@@ -10,6 +10,7 @@ export interface AuthUser {
   displayName: string;
   profileInfo: PersonalInfo;
   emailConfirmed: boolean;
+  role: 'admin' | 'visitor';
 }
 
 interface AccessTokenResponse {

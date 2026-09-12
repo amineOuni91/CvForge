@@ -5,6 +5,7 @@ import { ThemeToggle } from './ui/theme-toggle';
 import { HomeButton } from './ui/home-button';
 import { ConfirmEmailBanner } from './ui/confirm-email-banner';
 import { LogoutButton } from './ui/logout-button';
+import { AdminButton } from './ui/admin-button';
 import { AuthService } from './core/auth.service';
 
 function isHomeUrl(url: string): boolean {
@@ -18,7 +19,7 @@ function isConfirmEmailUrl(url: string): boolean {
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ToastHost, ThemeToggle, HomeButton, ConfirmEmailBanner, LogoutButton],
+  imports: [RouterOutlet, ToastHost, ThemeToggle, HomeButton, ConfirmEmailBanner, LogoutButton, AdminButton],
   template: `
     @if (!isPrintRoute() && !isConfirmEmailRoute() && auth.currentUser()?.emailConfirmed === false) {
       <app-confirm-email-banner />
@@ -32,6 +33,9 @@ function isConfirmEmailUrl(url: string): boolean {
       }
       @if (auth.isAuthenticated()) {
         <app-logout-button />
+      }
+      @if (auth.currentUser()?.role === 'admin') {
+        <app-admin-button />
       }
     }
   `,

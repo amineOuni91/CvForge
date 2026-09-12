@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
+import { adminGuard } from './core/admin.guard';
 
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./pages/landing/landing').then((m) => m.Landing) },
@@ -32,6 +33,11 @@ export const routes: Routes = [
     path: 'editor/:id',
     canActivate: [authGuard],
     loadComponent: () => import('./pages/editor/editor').then((m) => m.Editor),
+  },
+  {
+    path: 'admin',
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () => import('./pages/admin/admin-users').then((m) => m.AdminUsers),
   },
   {
     // no authGuard: rendered by the backend's headless Chromium with data injected via

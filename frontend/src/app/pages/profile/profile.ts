@@ -25,6 +25,9 @@ import { Modal } from '../../ui/modal';
         <!-- Colonne 1 : Mes CV -->
         <div class="rounded-lg bg-white p-6 shadow-md dark:bg-slate-800">
           <h2 class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ 'profile.myCvs.title' | t }}</h2>
+          @if (auth.currentUser()?.role === 'admin') {
+            <a routerLink="/admin" class="mb-3 block text-sm text-slate-600 hover:underline dark:text-slate-300">{{ 'admin.title' | t }}</a>
+          }
           @if (cvs().length === 0) {
             <p class="mb-4 text-sm text-slate-400 dark:text-slate-500">{{ 'dashboard.empty' | t }}</p>
           } @else {
