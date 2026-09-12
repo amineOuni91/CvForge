@@ -1,10 +1,8 @@
 import { CdkDrag, CdkDragDrop, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CvStore } from '../cv-store';
 import { Experience } from '../../models/cv-document';
 import { TagInput } from '../../ui/tag-input';
-import { AiAssistantService } from '../ai.service';
-import { AiSuggestion } from '../ai-suggestion.component';
 
 const EMPTY_EXPERIENCE: Experience = {
   position: '',
@@ -22,7 +20,7 @@ const EMPTY_EXPERIENCE: Experience = {
 
 @Component({
   selector: 'app-experiences-section',
-  imports: [TagInput, CdkDropList, CdkDrag, CdkDragHandle, AiSuggestion],
+  imports: [TagInput, CdkDropList, CdkDrag, CdkDragHandle],
   template: `
     <div cdkDropList class="space-y-4" (cdkDropListDropped)="onDrop($event)">
       @for (exp of experiences(); track $index) {
@@ -58,12 +56,6 @@ const EMPTY_EXPERIENCE: Experience = {
           <textarea rows="2" class="mb-1 w-full rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" placeholder="Description"
                     [value]="exp.description" (input)="patch($index, { description: textareaValue($event) })"></textarea>
 
-          @if (exp.description) {
-            <div class="mb-2">
-              <app-ai-suggestion label="✨ Améliorer avec l'IA" [fetchFn]="improveFn($index)" (accepted)="patch($index, { description: $event })" />
-            </div>
-          }
-
           <div class="mb-2">
             <span class="mb-1 block text-xs text-slate-500 dark:text-slate-400">Technologies</span>
             <app-tag-input [values]="exp.technologies" placeholder="Ajouter une techno..."
@@ -78,27 +70,6 @@ const EMPTY_EXPERIENCE: Experience = {
             <span class="mb-1 block text-xs text-slate-500 dark:text-slate-400">Réalisations</span>
             <app-tag-input [values]="exp.achievements" placeholder="Ajouter une réalisation..."
                             (valuesChange)="patch($index, { achievements: $event })" />
-            @if (exp.description) {
-              <button type="button" (click)="generateAchievements($index)"
-                      [disabled]="!ai.available() || generatingIndex() === $index"
-                      [title]="ai.available() ? '' : 'Configurez ANTHROPIC_API_KEY pour activer l\\'assistant IA'"
-                      class="mt-1 text-xs font-medium text-indigo-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline dark:text-indigo-400">
-                {{ generatingIndex() === $index ? 'Génération...' : '✨ Générer des réalisations' }}
-              </button>
-              @if (pendingAchievements(); as pending) {
-                @if (pending.index === $index) {
-                  <div class="mt-2 rounded border border-indigo-200 bg-indigo-50 p-2 dark:border-indigo-800 dark:bg-indigo-950">
-                    <ul class="list-disc pl-4 text-sm text-slate-700 dark:text-slate-200">
-                      @for (item of pending.items; track item) { <li>{{ item }}</li> }
-                    </ul>
-                    <div class="mt-2 flex gap-2">
-                      <button type="button" (click)="acceptAchievements($index)" class="rounded bg-indigo-600 px-2 py-1 text-xs text-white">Accepter</button>
-                      <button type="button" (click)="pendingAchievements.set(null)" class="rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 dark:border-slate-600 dark:text-slate-300">Ignorer</button>
-                    </div>
-                  </div>
-                }
-              }
-            }
           </div>
         </div>
       }
@@ -109,38 +80,9 @@ const EMPTY_EXPERIENCE: Experience = {
     </div>
   `,
 })
-export class ExperiencesSection implements OnInit {
+export class ExperiencesSection {
   private readonly store = inject(CvStore);
-  protected readonly ai = inject(AiAssistantService);
   readonly experiences = computed(() => this.store.document()?.experiences ?? []);
-
-  readonly generatingIndex = signal<number | null>(null);
-  readonly pendingAchievements = signal<{ index: number; items: string[] } | null>(null);
-
-  ngOnInit(): void {
-    this.ai.checkAvailability();
-  }
-
-  improveFn(index: number): () => Promise<string> {
-    return () => this.ai.improveText(this.experiences()[index].description);
-  }
-
-  async generateAchievements(index: number): Promise<void> {
-    this.generatingIndex.set(index);
-    try {
-      const items = await this.ai.generateBulletPoints(this.experiences()[index].description);
-      this.pendingAchievements.set({ index, items });
-    } finally {
-      this.generatingIndex.set(null);
-    }
-  }
-
-  acceptAchievements(index: number): void {
-    const pending = this.pendingAchievements();
-    if (!pending || pending.index !== index) return;
-    this.patch(index, { achievements: [...this.experiences()[index].achievements, ...pending.items] });
-    this.pendingAchievements.set(null);
-  }
 
   value(event: Event): string {
     return (event.target as HTMLInputElement).value;

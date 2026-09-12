@@ -1,5 +1,3 @@
-using System.Security.Claims;
-using System.Threading.RateLimiting;
 using CvForge.Api.Data;
 using CvForge.Api.Domain;
 using CvForge.Api.Endpoints;
@@ -7,7 +5,6 @@ using CvForge.Api.Services;
 using CvForge.Api.Validation;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,25 +38,8 @@ else
 }
 builder.Services.AddScoped<IValidator<CvDocument>, CvDocumentValidator>();
 builder.Services.AddSingleton<PdfService>();
-builder.Services.AddSingleton<AiService>();
-builder.Services.AddScoped<ImportService>();
 builder.Services.AddSingleton<CvForge.Api.Services.DocxExport.DocxExportService>();
 builder.Services.AddSingleton<TxtExportService>();
-
-const string AiRateLimitPolicy = "ai";
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.AddPolicy(AiRateLimitPolicy, httpContext => RateLimitPartition.GetFixedWindowLimiter(
-        partitionKey: httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                      ?? httpContext.Connection.RemoteIpAddress?.ToString()
-                      ?? "anonymous",
-        factory: _ => new FixedWindowRateLimiterOptions
-        {
-            PermitLimit = 10,
-            Window = TimeSpan.FromMinutes(1),
-        }));
-});
 
 const string FrontendCorsPolicy = "Frontend";
 builder.Services.AddCors(options =>
@@ -85,7 +65,6 @@ if (!app.Environment.IsDevelopment())
 app.UseCors(FrontendCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseRateLimiter();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
@@ -97,8 +76,8 @@ var cvGroup = app.MapGroup("/api/cvs");
 cvGroup.MapCvEndpoints();
 cvGroup.MapExportEndpoints();
 
-app.MapGroup("/api/ai").RequireRateLimiting(AiRateLimitPolicy).MapAiEndpoints();
-app.MapGroup("/api/import").RequireRateLimiting(AiRateLimitPolicy).MapImportEndpoints();
+app.MapGroup("/api/ats").MapAtsEndpoints();
+app.MapGroup("/api/import").MapImportEndpoints();
 
 // public: shown on the landing page, no account data exposed
 app.MapGroup("/api/stats").MapStatsEndpoints();

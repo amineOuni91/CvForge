@@ -82,8 +82,8 @@ import { TPipe } from '../../core/t.pipe';
           <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ 'landing.feature.pdf.body' | t }}</p>
         </div>
         <div class="rounded-lg border border-slate-200 p-5 dark:border-slate-700">
-          <h3 class="font-semibold text-slate-800 dark:text-slate-100">{{ 'landing.feature.ai.title' | t }}</h3>
-          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ 'landing.feature.ai.body' | t }}</p>
+          <h3 class="font-semibold text-slate-800 dark:text-slate-100">{{ 'landing.feature.ats.title' | t }}</h3>
+          <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ 'landing.feature.ats.body' | t }}</p>
         </div>
       </section>
 

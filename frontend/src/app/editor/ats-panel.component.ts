@@ -84,7 +84,7 @@ export class AtsPanel {
     this.error.set(false);
     try {
       this.result.set(
-        await firstValueFrom(this.http.post<AtsAnalysis>(`${API_BASE_URL}/api/ai/analyze`, { document })),
+        await firstValueFrom(this.http.post<AtsAnalysis>(`${API_BASE_URL}/api/ats/analyze`, { document })),
       );
     } catch {
       this.error.set(true);

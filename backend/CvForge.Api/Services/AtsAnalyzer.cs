@@ -15,7 +15,7 @@ public record AtsAnalysisResult(
 
 /// <summary>
 /// Deterministic ATS scoring (C# rules, not an LLM) — reproducible and explainable: the same CV
-/// always yields the same score. Only the natural-language recommendations (AiEndpoints) call an LLM.
+/// always yields the same score. Recommendations are the plain rule failure messages.
 /// </summary>
 public static partial class AtsAnalyzer
 {
