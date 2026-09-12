@@ -83,6 +83,9 @@ cvGroup.MapExportEndpoints();
 app.MapGroup("/api/ai").RequireRateLimiting(AiRateLimitPolicy).MapAiEndpoints();
 app.MapGroup("/api/import").RequireRateLimiting(AiRateLimitPolicy).MapImportEndpoints();
 
+// public: shown on the landing page, no account data exposed
+app.MapGroup("/api/stats").MapStatsEndpoints();
+
 app.Run();
 
 /// <summary>Exposed for WebApplicationFactory&lt;Program&gt; in CvForge.Tests.</summary>

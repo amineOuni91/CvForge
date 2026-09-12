@@ -42,6 +42,7 @@ export const en: Record<string, string> = {
   'landing.feature.ai.body': 'Rephrase your descriptions and generate quantified achievements, always with your approval.',
   'landing.footer.rights': 'All rights reserved.',
   'landing.cta.myCvs': 'My CVs',
+  'landing.stats.cvCreated': 'CVs created with CvForge',
   'landing.how.title': 'How it works',
   'landing.how.subtitle': 'A quick look at the key features.',
   'landing.how.create.title': 'Create a CV',

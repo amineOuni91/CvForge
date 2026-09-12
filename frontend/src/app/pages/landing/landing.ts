@@ -1,5 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { API_BASE_URL } from '../../core/api-config';
 import { AuthService } from '../../core/auth.service';
 import { I18nService } from '../../core/i18n.service';
 import { TPipe } from '../../core/t.pipe';
@@ -50,6 +53,19 @@ import { TPipe } from '../../core/t.pipe';
             </a>
           }
         </div>
+
+        @if (cvCount() !== null) {
+          <div class="mx-auto mt-8 inline-flex items-center gap-2.5 rounded-full border border-slate-200 bg-white px-5 py-2 dark:border-slate-700 dark:bg-slate-800">
+            <span class="relative flex h-2 w-2">
+              <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75"></span>
+              <span class="relative inline-flex h-2 w-2 rounded-full bg-indigo-500"></span>
+            </span>
+            <span class="text-sm text-slate-600 dark:text-slate-300">
+              <span class="font-bold tabular-nums text-slate-900 dark:text-slate-100">{{ cvCount()!.toLocaleString('fr-FR') }}</span>
+              {{ 'landing.stats.cvCreated' | t }}
+            </span>
+          </div>
+        }
       </main>
 
       <section class="mx-auto grid max-w-4xl grid-cols-1 gap-6 px-6 pb-20 sm:grid-cols-2 lg:grid-cols-4">
@@ -157,8 +173,20 @@ import { TPipe } from '../../core/t.pipe';
     </div>
   `,
 })
-export class Landing {
+export class Landing implements OnInit {
   protected readonly i18n = inject(I18nService);
   protected readonly auth = inject(AuthService);
+  private readonly http = inject(HttpClient);
   protected readonly year = new Date().getFullYear();
+
+  protected readonly cvCount = signal<number | null>(null);
+
+  async ngOnInit(): Promise<void> {
+    try {
+      const { count } = await firstValueFrom(this.http.get<{ count: number }>(`${API_BASE_URL}/api/stats/cv-count`));
+      this.cvCount.set(count);
+    } catch {
+      // social-proof counter is a nice-to-have; hide it silently if the request fails
+    }
+  }
 }
