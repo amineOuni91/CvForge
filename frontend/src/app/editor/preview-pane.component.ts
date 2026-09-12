@@ -21,13 +21,15 @@ const A4_HEIGHT_MM = 297;
         <button type="button" (click)="toggleFullscreen()" class="ml-4 rounded px-2 py-1 hover:bg-slate-100">
           {{ fullscreen() ? '✕ Quitter le plein écran' : '⛶ Plein écran' }}
         </button>
-        <span class="ml-4 text-slate-500">{{ pageCount() }} page{{ pageCount() > 1 ? 's' : '' }}</span>
+        <span class="ml-4 text-slate-500">{{ currentPage() }}/{{ pageCount() }} pages</span>
       </div>
       <div
+        #scrollContainer
         class="flex-1 overflow-auto bg-slate-200 p-6"
         [class.fixed]="fullscreen()"
         [class.inset-0]="fullscreen()"
         [class.z-50]="fullscreen()"
+        (scroll)="scrollTopPx.set(scrollContainer.scrollTop)"
       >
         @if (document(); as doc) {
           <div
@@ -61,6 +63,14 @@ export class PreviewPane {
   readonly pageCount = computed(() =>
     Math.max(1, Math.ceil((this.contentHeightPx() - 2) / (A4_HEIGHT_MM * PX_PER_MM))),
   );
+
+  // Scroll happens in the transformed (scaled) visual space, so the page height it's compared
+  // against must be scaled by the same zoom factor.
+  readonly scrollTopPx = signal(0);
+  readonly currentPage = computed(() => {
+    const pageHeightScaled = A4_HEIGHT_MM * PX_PER_MM * this.zoom();
+    return Math.min(this.pageCount(), Math.floor(this.scrollTopPx() / pageHeightScaled) + 1);
+  });
 
   constructor() {
     // ResizeObserver covers resizes not tied to a document() change (e.g. web font finishing
