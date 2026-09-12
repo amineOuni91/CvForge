@@ -12,12 +12,11 @@ public static class AuthEndpoints
 {
     public static void MapAuthEndpoints(this RouteGroupBuilder group)
     {
-        group.MapGet("/me", (ClaimsPrincipal principal, UserManager<AppUser> userManager) =>
+        group.MapGet("/me", async (ClaimsPrincipal principal, UserManager<AppUser> userManager) =>
         {
-            var user = userManager.GetUserAsync(principal).GetAwaiter().GetResult();
-            return user is null
-                ? Results.NotFound()
-                : Results.Ok(new { user.Id, user.Email, user.DisplayName, user.ProfileInfo, user.EmailConfirmed });
+            var user = await userManager.GetUserAsync(principal);
+            if (user is null) return Results.NotFound();
+            return Results.Ok(new { user.Id, user.Email, user.DisplayName, user.ProfileInfo, user.EmailConfirmed, Role = await RoleNameAsync(userManager, user) });
         }).RequireAuthorization();
 
         group.MapPatch("/me", async (UpdateProfileRequest request, ClaimsPrincipal principal, UserManager<AppUser> userManager) =>
@@ -28,7 +27,7 @@ public static class AuthEndpoints
             user.DisplayName = request.DisplayName;
             user.ProfileInfo = request.PersonalInfo;
             await userManager.UpdateAsync(user);
-            return Results.Ok(new { user.Id, user.Email, user.DisplayName, user.ProfileInfo, user.EmailConfirmed });
+            return Results.Ok(new { user.Id, user.Email, user.DisplayName, user.ProfileInfo, user.EmailConfirmed, Role = await RoleNameAsync(userManager, user) });
         }).RequireAuthorization();
 
         group.MapDelete("/me", async ([FromBody] DeleteAccountRequest request, ClaimsPrincipal principal, UserManager<AppUser> userManager) =>
@@ -65,7 +64,7 @@ public static class AuthEndpoints
             if (!result.Succeeded) return Results.BadRequest(new { error = "Code invalide ou expiré." });
 
             await userManager.SetUserNameAsync(user, request.NewEmail);
-            return Results.Ok(new { user.Id, user.Email, user.DisplayName, user.ProfileInfo, user.EmailConfirmed });
+            return Results.Ok(new { user.Id, user.Email, user.DisplayName, user.ProfileInfo, user.EmailConfirmed, Role = await RoleNameAsync(userManager, user) });
         }).RequireAuthorization();
 
         // MapIdentityApi's built-in GET /confirmEmail expects the code straight off a clicked
@@ -91,6 +90,9 @@ public static class AuthEndpoints
             return result.Succeeded ? Results.Ok() : Results.BadRequest(new { error = "Code invalide ou expiré." });
         });
     }
+
+    private static async Task<string> RoleNameAsync(UserManager<AppUser> userManager, AppUser user) =>
+        await userManager.IsInRoleAsync(user, "Admin") ? "admin" : "visitor";
 }
 
 public record UpdateProfileRequest(string DisplayName, PersonalInfo PersonalInfo);

@@ -17,9 +17,13 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", p => p.RequireRole("Admin"));
+});
 builder.Services
     .AddIdentityApiEndpoints<AppUser>()
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>();
 var gmailUser = builder.Configuration["Smtp:User"];
 var gmailAppPassword = builder.Configuration["Smtp:AppPassword"];
@@ -98,6 +102,18 @@ app.MapGroup("/api/import").RequireRateLimiting(AiRateLimitPolicy).MapImportEndp
 
 // public: shown on the landing page, no account data exposed
 app.MapGroup("/api/stats").MapStatsEndpoints();
+
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    if (!await roleManager.RoleExistsAsync("Admin"))
+        await roleManager.CreateAsync(new IdentityRole("Admin"));
+
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+    var bootstrapAdmin = await userManager.FindByEmailAsync("amine.ouni91@gmail.com");
+    if (bootstrapAdmin is not null && !await userManager.IsInRoleAsync(bootstrapAdmin, "Admin"))
+        await userManager.AddToRoleAsync(bootstrapAdmin, "Admin");
+}
 
 app.Run();
 
