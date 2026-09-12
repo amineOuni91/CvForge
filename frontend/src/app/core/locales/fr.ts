@@ -124,4 +124,10 @@ export const fr: Record<string, string> = {
   'admin.table.role': 'Rôle',
   'admin.confirmed.yes': 'Oui',
   'admin.confirmed.no': 'Non',
+  'admin.table.actions': 'Actions',
+  'admin.action.activate': 'Activer',
+  'admin.action.resetPassword': 'Réinitialiser le mot de passe',
+  'admin.action.confirm': 'Confirmer',
+  'admin.action.cancel': 'Annuler',
+  'admin.action.delete': 'Supprimer',
 };

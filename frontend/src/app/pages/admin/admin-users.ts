@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL } from '../../core/api-config';
 import { TPipe } from '../../core/t.pipe';
 import { I18nService } from '../../core/i18n.service';
+import { Modal } from '../../ui/modal';
 
 export interface AdminUser {
   id: string;
@@ -15,9 +16,14 @@ export interface AdminUser {
   role: 'admin' | 'visitor';
 }
 
+type PendingAction =
+  | { kind: 'role'; user: AdminUser; newRole: 'admin' | 'visitor' }
+  | { kind: 'activate'; user: AdminUser }
+  | { kind: 'delete'; user: AdminUser };
+
 @Component({
   selector: 'app-admin-users',
-  imports: [ReactiveFormsModule, RouterLink, TPipe],
+  imports: [ReactiveFormsModule, RouterLink, TPipe, Modal],
   template: `
     <main class="min-h-screen bg-slate-100 p-6 dark:bg-slate-900">
       <div class="mx-auto mb-6 max-w-5xl">
@@ -59,6 +65,7 @@ export interface AdminUser {
               <th class="p-3">{{ 'admin.table.displayName' | t }}</th>
               <th class="p-3">{{ 'admin.table.confirmed' | t }}</th>
               <th class="p-3">{{ 'admin.table.role' | t }}</th>
+              <th class="p-3">{{ 'admin.table.actions' | t }}</th>
             </tr>
           </thead>
           <tbody>
@@ -72,12 +79,64 @@ export interface AdminUser {
                     {{ (user.emailConfirmed ? 'admin.confirmed.yes' : 'admin.confirmed.no') | t }}
                   </span>
                 </td>
-                <td class="p-3 text-slate-600 dark:text-slate-300">{{ (user.role === 'admin' ? 'admin.role.admin' : 'admin.role.visitor') | t }}</td>
+                <td class="p-3">
+                  <select
+                    [value]="user.role"
+                    (change)="askRoleChange(user, $any($event.target).value)"
+                    class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                  >
+                    <option value="visitor">{{ 'admin.role.visitor' | t }}</option>
+                    <option value="admin">{{ 'admin.role.admin' | t }}</option>
+                  </select>
+                </td>
+                <td class="p-3">
+                  <div class="flex flex-wrap gap-2 text-xs">
+                    @if (!user.emailConfirmed) {
+                      <button type="button" (click)="askActivate(user)" class="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:text-slate-200">
+                        {{ 'admin.action.activate' | t }}
+                      </button>
+                    }
+                    @if (resettingId() === user.id) {
+                      <input #newPasswordInput type="password" [placeholder]="'admin.createUser.password' | t" class="w-28 rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+                      <button type="button" (click)="confirmResetPassword(user, newPasswordInput.value)" class="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:text-slate-200">
+                        {{ 'admin.action.confirm' | t }}
+                      </button>
+                      <button type="button" (click)="resettingId.set(null)" class="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:text-slate-200">
+                        {{ 'admin.action.cancel' | t }}
+                      </button>
+                    } @else {
+                      <button type="button" (click)="resettingId.set(user.id)" class="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:text-slate-200">
+                        {{ 'admin.action.resetPassword' | t }}
+                      </button>
+                    }
+                    <button type="button" (click)="askDelete(user)" class="rounded border border-red-300 px-2 py-1 text-red-600 dark:border-red-800 dark:text-red-400">
+                      {{ 'admin.action.delete' | t }}
+                    </button>
+                  </div>
+                  @if (actionMessage()?.userId === user.id) {
+                    <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ actionMessage()?.text }}</p>
+                  }
+                </td>
               </tr>
             }
           </tbody>
         </table>
       </div>
+
+      @if (pending(); as action) {
+        <app-modal (close)="pending.set(null)">
+          <h2 class="mb-2 text-lg font-semibold text-slate-800 dark:text-slate-100">{{ confirmTitle(action) }}</h2>
+          <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">{{ confirmHint(action) }}</p>
+          <div class="flex justify-end gap-2">
+            <button type="button" (click)="pending.set(null)" class="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 dark:text-slate-200">
+              {{ 'admin.action.cancel' | t }}
+            </button>
+            <button type="button" (click)="confirmPending()" class="rounded bg-slate-800 px-3 py-1.5 text-sm text-white">
+              {{ 'admin.action.confirm' | t }}
+            </button>
+          </div>
+        </app-modal>
+      }
     </main>
   `,
 })
@@ -88,6 +147,9 @@ export class AdminUsers implements OnInit {
   readonly users = signal<AdminUser[]>([]);
   readonly creating = signal(false);
   readonly createError = signal<string | null>(null);
+  readonly resettingId = signal<string | null>(null);
+  readonly pending = signal<PendingAction | null>(null);
+  readonly actionMessage = signal<{ userId: string; text: string } | null>(null);
 
   readonly createForm = new FormGroup({
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
@@ -120,4 +182,91 @@ export class AdminUsers implements OnInit {
       this.creating.set(false);
     }
   }
+
+  askRoleChange(user: AdminUser, newRole: 'admin' | 'visitor'): void {
+    if (newRole === user.role) return;
+    this.pending.set({ kind: 'role', user, newRole });
+  }
+
+  askActivate(user: AdminUser): void {
+    this.pending.set({ kind: 'activate', user });
+  }
+
+  askDelete(user: AdminUser): void {
+    this.pending.set({ kind: 'delete', user });
+  }
+
+  confirmTitle(action: PendingAction): string {
+    switch (action.kind) {
+      case 'role':
+        return `Changer le rôle de ${action.user.email} ?`;
+      case 'activate':
+        return `Activer le compte de ${action.user.email} ?`;
+      case 'delete':
+        return `Supprimer ${action.user.email} ?`;
+    }
+  }
+
+  confirmHint(action: PendingAction): string {
+    switch (action.kind) {
+      case 'role':
+        return `Nouveau rôle : ${action.newRole === 'admin' ? 'Administrateur' : 'Visiteur'}.`;
+      case 'activate':
+        return 'Le compte sera marqué confirmé sans code ni email.';
+      case 'delete':
+        return 'Cette action est définitive : le compte et tous ses CV seront supprimés.';
+    }
+  }
+
+  async confirmPending(): Promise<void> {
+    const action = this.pending();
+    if (!action) return;
+    this.pending.set(null);
+
+    try {
+      if (action.kind === 'role') {
+        // PATCH takes the whole editable record at once (same contract as PATCH /api/auth/me
+        // elsewhere in this app) — fetch the current detail first so this role-only change
+        // doesn't blank out the target's displayName/personalInfo.
+        const detail = await firstValueFrom(
+          this.http.get<AdminRoleChangeDetail>(`${API_BASE_URL}/api/admin/users/${action.user.id}`),
+        );
+        const body = {
+          displayName: detail.displayName,
+          personalInfo: detail.profileInfo,
+          email: detail.email,
+          role: action.newRole,
+        };
+        await firstValueFrom(this.http.patch(`${API_BASE_URL}/api/admin/users/${action.user.id}`, body));
+      } else if (action.kind === 'activate') {
+        await firstValueFrom(this.http.post(`${API_BASE_URL}/api/admin/users/${action.user.id}/activate`, {}));
+      } else {
+        await firstValueFrom(this.http.delete(`${API_BASE_URL}/api/admin/users/${action.user.id}`));
+      }
+      await this.reload();
+    } catch {
+      this.actionMessage.set({ userId: action.user.id, text: "Échec de l'action." });
+    }
+  }
+
+  async confirmResetPassword(user: AdminUser, newPassword: string): Promise<void> {
+    if (!newPassword) return;
+    try {
+      await firstValueFrom(this.http.post(`${API_BASE_URL}/api/admin/users/${user.id}/reset-password`, { newPassword }));
+      this.resettingId.set(null);
+    } catch {
+      this.actionMessage.set({ userId: user.id, text: 'Mot de passe refusé (critères non respectés).' });
+    }
+  }
+}
+
+/**
+ * Narrow shape for the get-before-patch in confirmPending's 'role' branch — this task doesn't
+ * introduce the full `AdminUserDetail` interface yet (that's Task 7), just the 3 fields needed
+ * to round-trip a role-only change without touching anything else.
+ */
+interface AdminRoleChangeDetail {
+  displayName: string;
+  profileInfo: unknown;
+  email: string;
 }
