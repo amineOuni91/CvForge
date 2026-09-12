@@ -117,6 +117,62 @@ public class AdminTests(DatabaseFixture fixture)
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task ResetPassword_ThenLoginWithNewPassword_Succeeds()
+    {
+        var (adminClient, _, _) = await TestUser.CreateAuthenticatedAdminClientWithEmailAsync(fixture.Factory);
+        var (_, targetEmail) = await TestUser.CreateAuthenticatedClientWithEmailAsync(fixture.Factory);
+        var targetId = (await adminClient.GetFromJsonAsync<List<AdminUserDto>>("/api/admin/users"))!
+            .Single(u => u.Email == targetEmail).Id;
+        const string newPassword = "BrandNew789!@#";
+
+        var response = await adminClient.PostAsJsonAsync($"/api/admin/users/{targetId}/reset-password", new { newPassword });
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+
+        var login = await fixture.Factory.CreateClient()
+            .PostAsJsonAsync("/api/auth/login?useCookies=false", new { email = targetEmail, password = newPassword });
+        Assert.Equal(System.Net.HttpStatusCode.OK, login.StatusCode);
+    }
+
+    [Fact]
+    public async Task Activate_SetsEmailConfirmedWithoutAnyCode()
+    {
+        var (adminClient, _, _) = await TestUser.CreateAuthenticatedAdminClientWithEmailAsync(fixture.Factory);
+        var (_, targetEmail) = await TestUser.CreateAuthenticatedClientWithEmailAsync(fixture.Factory);
+        var targetId = (await adminClient.GetFromJsonAsync<List<AdminUserDto>>("/api/admin/users"))!
+            .Single(u => u.Email == targetEmail).Id;
+
+        var response = await adminClient.PostAsync($"/api/admin/users/{targetId}/activate", null);
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+
+        var detail = await adminClient.GetFromJsonAsync<AdminUserDetailDto>($"/api/admin/users/{targetId}");
+        Assert.True(detail!.EmailConfirmed);
+    }
+
+    [Fact]
+    public async Task DeleteUser_RemovesTheAccount()
+    {
+        var (adminClient, _, _) = await TestUser.CreateAuthenticatedAdminClientWithEmailAsync(fixture.Factory);
+        var createResponse = await adminClient.PostAsJsonAsync("/api/admin/users", new { email = $"todelete-{Guid.NewGuid():N}@example.com", password = "Test123!@#", role = "visitor" });
+        var targetId = (await createResponse.Content.ReadFromJsonAsync<AdminUserDto>())!.Id;
+
+        var deleteResponse = await adminClient.DeleteAsync($"/api/admin/users/{targetId}");
+        Assert.Equal(System.Net.HttpStatusCode.OK, deleteResponse.StatusCode);
+
+        var getResponse = await adminClient.GetAsync($"/api/admin/users/{targetId}");
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, getResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteUser_CannotDeleteOwnAccount()
+    {
+        var (adminClient, _, adminId) = await TestUser.CreateAuthenticatedAdminClientWithEmailAsync(fixture.Factory);
+
+        var response = await adminClient.DeleteAsync($"/api/admin/users/{adminId}");
+
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     private record MeDto(string Id, string Email, string DisplayName, bool EmailConfirmed, string Role);
     private record AdminUserDto(string Id, string Email, string DisplayName, bool EmailConfirmed, string Role);
     private record AdminUserDetailDto(string Id, string Email, string DisplayName, PersonalInfoDto ProfileInfo, bool EmailConfirmed, string Role);

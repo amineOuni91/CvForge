@@ -65,6 +65,41 @@ public static class AdminEndpoints
 
             return Results.Ok(new AdminUserDetailDto(user.Id, user.Email!, user.DisplayName, user.ProfileInfo, user.EmailConfirmed, await RoleNameAsync(userManager, user)));
         });
+
+        group.MapPost("/users/{id}/reset-password", async (string id, AdminResetPasswordRequest request, UserManager<AppUser> userManager) =>
+        {
+            var user = await userManager.FindByIdAsync(id);
+            if (user is null) return Results.NotFound();
+
+            await userManager.RemovePasswordAsync(user);
+            var result = await userManager.AddPasswordAsync(user, request.NewPassword);
+            return result.Succeeded
+                ? Results.Ok()
+                : Results.BadRequest(new { error = string.Join(" ", result.Errors.Select(e => e.Description)) });
+        });
+
+        group.MapPost("/users/{id}/activate", async (string id, UserManager<AppUser> userManager) =>
+        {
+            var user = await userManager.FindByIdAsync(id);
+            if (user is null) return Results.NotFound();
+
+            user.EmailConfirmed = true;
+            await userManager.UpdateAsync(user);
+            return Results.Ok();
+        });
+
+        group.MapDelete("/users/{id}", async (string id, ClaimsPrincipal principal, UserManager<AppUser> userManager) =>
+        {
+            var callerId = userManager.GetUserId(principal)!;
+            if (id == callerId)
+                return Results.BadRequest(new { error = "Impossible de supprimer son propre compte depuis cette interface." });
+
+            var user = await userManager.FindByIdAsync(id);
+            if (user is null) return Results.NotFound();
+
+            var result = await userManager.DeleteAsync(user);
+            return result.Succeeded ? Results.Ok() : Results.BadRequest(new { error = "Échec de la suppression du compte." });
+        });
     }
 
     private static bool IsAdminRole(string? role) => string.Equals(role, "admin", StringComparison.OrdinalIgnoreCase);
@@ -77,3 +112,4 @@ public record AdminUserDto(string Id, string Email, string DisplayName, bool Ema
 public record AdminUserDetailDto(string Id, string Email, string DisplayName, PersonalInfo ProfileInfo, bool EmailConfirmed, string Role);
 public record CreateAdminUserRequest(string Email, string Password, string Role);
 public record UpdateAdminUserRequest(string DisplayName, PersonalInfo PersonalInfo, string Email, string Role);
+public record AdminResetPasswordRequest(string NewPassword);
