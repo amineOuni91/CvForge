@@ -14,18 +14,18 @@ const A4_HEIGHT_MM = 297;
   imports: [TemplateHostComponent],
   template: `
     <div class="flex h-full flex-col">
-      <div class="flex items-center justify-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-sm">
-        <button type="button" (click)="zoomOut()" class="rounded px-2 py-1 hover:bg-slate-100">−</button>
-        <span class="w-12 text-center text-slate-600">{{ zoomPercent() }}%</span>
-        <button type="button" (click)="zoomIn()" class="rounded px-2 py-1 hover:bg-slate-100">+</button>
-        <button type="button" (click)="toggleFullscreen()" class="ml-4 rounded px-2 py-1 hover:bg-slate-100">
+      <div class="flex items-center justify-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-sm dark:border-slate-700 dark:bg-slate-800">
+        <button type="button" (click)="zoomOut()" class="rounded px-2 py-1 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700">−</button>
+        <span class="w-12 text-center text-slate-600 dark:text-slate-300">{{ zoomPercent() }}%</span>
+        <button type="button" (click)="zoomIn()" class="rounded px-2 py-1 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700">+</button>
+        <button type="button" (click)="toggleFullscreen()" class="ml-4 rounded px-2 py-1 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700">
           {{ fullscreen() ? '✕ Quitter le plein écran' : '⛶ Plein écran' }}
         </button>
-        <span class="ml-4 text-slate-500">{{ currentPage() }}/{{ pageCount() }} pages</span>
+        <span class="ml-4 text-slate-500 dark:text-slate-400">{{ currentPage() }}/{{ pageCount() }} pages</span>
       </div>
       <div
         #scrollContainer
-        class="flex-1 overflow-auto bg-slate-200 p-6"
+        class="flex-1 overflow-auto bg-slate-200 p-6 dark:bg-slate-900"
         [class.fixed]="fullscreen()"
         [class.inset-0]="fullscreen()"
         [class.z-50]="fullscreen()"

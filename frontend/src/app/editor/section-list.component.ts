@@ -39,10 +39,10 @@ const TITLES: Record<string, string> = {
     InterestsSection,
   ],
   template: `
-    <div class="divide-y divide-slate-200">
+    <div class="divide-y divide-slate-200 dark:divide-slate-700">
       <div>
         <button type="button" (click)="toggle('personalInfo')"
-                class="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-slate-800">
+                class="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-slate-800 dark:text-slate-100">
           Informations personnelles
           <span class="text-slate-400">{{ isOpen('personalInfo') ? '▾' : '▸' }}</span>
         </button>
@@ -56,11 +56,11 @@ const TITLES: Record<string, string> = {
           <div cdkDrag>
             <div class="flex items-center px-4 py-3">
               <span cdkDragHandle class="mr-2 cursor-move text-slate-400" title="Réordonner">⠿</span>
-              <button type="button" (click)="toggle(sectionId)" class="flex flex-1 items-center justify-between text-left text-sm font-semibold text-slate-800">
+              <button type="button" (click)="toggle(sectionId)" class="flex flex-1 items-center justify-between text-left text-sm font-semibold text-slate-800 dark:text-slate-100">
                 {{ TITLES[sectionId] }}
                 <span class="ml-2 text-slate-400">{{ isOpen(sectionId) ? '▾' : '▸' }}</span>
               </button>
-              <button type="button" (click)="toggleHidden(sectionId)" class="ml-2 text-xs text-slate-400 hover:text-slate-700"
+              <button type="button" (click)="toggleHidden(sectionId)" class="ml-2 text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                       [title]="isHidden(sectionId) ? 'Section masquée du CV — afficher' : 'Masquer cette section du CV'">
                 {{ isHidden(sectionId) ? '🚫' : '👁' }}
               </button>

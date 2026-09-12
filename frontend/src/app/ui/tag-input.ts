@@ -7,17 +7,17 @@ import { FormsModule } from '@angular/forms';
   imports: [FormsModule, CdkDropList, CdkDrag],
   template: `
     <div cdkDropList cdkDropListOrientation="horizontal" (cdkDropListDropped)="onDrop($event)"
-         class="flex flex-wrap gap-1.5 rounded border border-slate-300 p-1.5">
+         class="flex flex-wrap gap-1.5 rounded border border-slate-300 p-1.5 dark:border-slate-600">
       @for (tag of values(); track $index) {
         @if (editingIndex() === $index) {
           <input type="text" autofocus [(ngModel)]="editDraft"
                  (keydown.enter)="commitEdit($index)" (keydown.escape)="cancelEdit()" (blur)="commitEdit($index)"
                  (focus)="$any($event.target).select()"
-                 class="min-w-[4rem] rounded border border-indigo-300 px-1 py-0.5 text-xs outline-none" />
+                 class="min-w-[4rem] rounded border border-indigo-300 px-1 py-0.5 text-xs outline-none dark:bg-slate-700 dark:text-slate-100" />
         } @else {
-          <span cdkDrag (dblclick)="startEdit($index)" class="flex cursor-move items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+          <span cdkDrag (dblclick)="startEdit($index)" class="flex cursor-move items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700 dark:bg-slate-700 dark:text-slate-200">
             {{ tag }}
-            <button type="button" (click)="remove($index)" class="text-slate-400 hover:text-slate-700">×</button>
+            <button type="button" (click)="remove($index)" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-100">×</button>
           </span>
         }
       }
@@ -27,7 +27,7 @@ import { FormsModule } from '@angular/forms';
         [(ngModel)]="draft"
         (keydown.enter)="commit($event)"
         (blur)="commitDraft()"
-        class="min-w-[6rem] flex-1 border-0 px-1 py-0.5 text-sm outline-none"
+        class="min-w-[6rem] flex-1 border-0 px-1 py-0.5 text-sm outline-none dark:bg-transparent dark:text-slate-100"
       />
     </div>
   `,

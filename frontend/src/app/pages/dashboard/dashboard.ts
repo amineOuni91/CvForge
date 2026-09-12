@@ -15,12 +15,12 @@ import { Skeleton } from '../../ui/skeleton';
   selector: 'app-dashboard',
   imports: [RouterLink, TPipe, DatePipe, Modal, Skeleton],
   template: `
-    <main class="min-h-screen bg-slate-100 p-8">
+    <main class="min-h-screen bg-slate-100 p-8 dark:bg-slate-900">
       <header class="mb-6 flex items-center justify-between">
-        <h1 class="text-xl font-bold text-slate-800">{{ 'dashboard.title' | t }}</h1>
+        <h1 class="text-xl font-bold text-slate-800 dark:text-slate-100">{{ 'dashboard.title' | t }}</h1>
         <div class="flex items-center gap-4 text-sm">
-          <span class="text-slate-500">{{ auth.currentUser()?.email }}</span>
-          <a routerLink="/profile" class="text-slate-600 hover:underline">{{ 'profile.title' | t }}</a>
+          <span class="text-slate-500 dark:text-slate-400">{{ auth.currentUser()?.email }}</span>
+          <a routerLink="/profile" class="text-slate-600 hover:underline dark:text-slate-300">{{ 'profile.title' | t }}</a>
         </div>
       </header>
 
@@ -36,7 +36,7 @@ import { Skeleton } from '../../ui/skeleton';
           type="button"
           (click)="fileInput.click()"
           [disabled]="importing()"
-          class="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50"
+          class="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
         >
           {{ importing() ? 'Import en cours...' : '⇪ Importer un CV (JSON)' }}
         </button>
@@ -44,13 +44,13 @@ import { Skeleton } from '../../ui/skeleton';
       </div>
 
       @if (importError(); as msg) {
-        <p class="mb-4 text-sm text-red-600">{{ msg }}</p>
+        <p class="mb-4 text-sm text-red-600 dark:text-red-400">{{ msg }}</p>
       }
 
       @if (loading()) {
         <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           @for (i of [1, 2, 3]; track i) {
-            <li class="overflow-hidden rounded-lg bg-white shadow-sm">
+            <li class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-slate-800">
               <app-skeleton extraClass="aspect-[210/297] w-full rounded-none" />
               <div class="space-y-2 p-3">
                 <app-skeleton extraClass="h-4 w-2/3" />
@@ -60,15 +60,15 @@ import { Skeleton } from '../../ui/skeleton';
           }
         </ul>
       } @else if (cvs().length === 0) {
-        <div class="rounded-lg border border-dashed border-slate-300 bg-white p-12 text-center">
-          <p class="text-slate-500">{{ 'dashboard.empty' | t }}</p>
-          <p class="mt-1 text-sm text-slate-400">Créez votre premier CV ou importez-en un existant.</p>
+        <div class="rounded-lg border border-dashed border-slate-300 bg-white p-12 text-center dark:border-slate-600 dark:bg-slate-800">
+          <p class="text-slate-500 dark:text-slate-400">{{ 'dashboard.empty' | t }}</p>
+          <p class="mt-1 text-sm text-slate-400 dark:text-slate-500">Créez votre premier CV ou importez-en un existant.</p>
         </div>
       } @else {
         <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           @for (cv of cvs(); track cv.id) {
-            <li class="overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md">
-              <a [routerLink]="['/editor', cv.id]" class="block aspect-[210/297] bg-slate-50">
+            <li class="overflow-hidden rounded-lg bg-white shadow-sm transition-shadow hover:shadow-md dark:bg-slate-800">
+              <a [routerLink]="['/editor', cv.id]" class="block aspect-[210/297] bg-slate-50 dark:bg-slate-900">
                 @if (thumbnails()[cv.id]; as thumb) {
                   <img [src]="thumb" class="h-full w-full object-cover object-top" alt="" />
                 } @else {
@@ -79,20 +79,20 @@ import { Skeleton } from '../../ui/skeleton';
                 @if (renamingId() === cv.id) {
                   <input
                     #renameInput
-                    class="w-full rounded border border-slate-300 px-1 py-0.5 text-sm font-medium"
+                    class="w-full rounded border border-slate-300 px-1 py-0.5 text-sm font-medium dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
                     [value]="cv.name"
                     (keydown.enter)="commitRename(cv.id, renameInput.value)"
                     (blur)="commitRename(cv.id, renameInput.value)"
                   />
                 } @else {
-                  <a [routerLink]="['/editor', cv.id]" class="font-medium text-slate-800 hover:underline">{{ cv.name }}</a>
+                  <a [routerLink]="['/editor', cv.id]" class="font-medium text-slate-800 hover:underline dark:text-slate-100">{{ cv.name }}</a>
                 }
-                <p class="mt-1 text-xs text-slate-400">Mis à jour {{ cv.updatedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
-                <div class="mt-2 flex gap-3 text-xs text-slate-500">
-                  <button type="button" (click)="startRename(cv.id)" title="Renommer" class="transition-colors hover:text-slate-800">✎</button>
-                  <button type="button" (click)="duplicate(cv.id)" title="Dupliquer" class="transition-colors hover:text-slate-800">⧉</button>
-                  <button type="button" (click)="downloadPdf(cv)" [disabled]="downloadingId() === cv.id" title="PDF" class="transition-colors hover:text-slate-800">⤓</button>
-                  <button type="button" (click)="askDelete(cv)" title="Supprimer" class="text-red-600 transition-colors hover:text-red-800">🗑</button>
+                <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">Mis à jour {{ cv.updatedAt | date: 'dd/MM/yyyy HH:mm:ss' }}</p>
+                <div class="mt-2 flex gap-3 text-xs text-slate-500 dark:text-slate-400">
+                  <button type="button" (click)="startRename(cv.id)" title="Renommer" class="transition-colors hover:text-slate-800 dark:hover:text-slate-100">✎</button>
+                  <button type="button" (click)="duplicate(cv.id)" title="Dupliquer" class="transition-colors hover:text-slate-800 dark:hover:text-slate-100">⧉</button>
+                  <button type="button" (click)="downloadPdf(cv)" [disabled]="downloadingId() === cv.id" title="PDF" class="transition-colors hover:text-slate-800 dark:hover:text-slate-100">⤓</button>
+                  <button type="button" (click)="askDelete(cv)" title="Supprimer" class="text-red-600 transition-colors hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">🗑</button>
                 </div>
               </div>
             </li>
@@ -102,16 +102,16 @@ import { Skeleton } from '../../ui/skeleton';
 
       @if (toDelete(); as cv) {
         <app-modal (close)="toDelete.set(null)">
-          <h2 class="mb-2 text-lg font-semibold text-slate-800">Supprimer « {{ cv.name }} » ?</h2>
-          <p class="mb-3 text-sm text-slate-500">Cette action est définitive. Tapez le nom du CV pour confirmer.</p>
+          <h2 class="mb-2 text-lg font-semibold text-slate-800 dark:text-slate-100">Supprimer « {{ cv.name }} » ?</h2>
+          <p class="mb-3 text-sm text-slate-500 dark:text-slate-400">Cette action est définitive. Tapez le nom du CV pour confirmer.</p>
           <input
             #confirmInput
-            class="mb-4 w-full rounded border border-slate-300 px-2 py-1 text-sm"
+            class="mb-4 w-full rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
             [placeholder]="cv.name"
             (input)="deleteConfirmText.set(confirmInput.value)"
           />
           <div class="flex justify-end gap-2">
-            <button type="button" (click)="toDelete.set(null)" class="rounded border border-slate-300 px-3 py-1.5 text-sm">Annuler</button>
+            <button type="button" (click)="toDelete.set(null)" class="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 dark:text-slate-200">Annuler</button>
             <button
               type="button"
               [disabled]="deleteConfirmText() !== cv.name"

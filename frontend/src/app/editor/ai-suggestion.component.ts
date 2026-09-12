@@ -16,13 +16,13 @@ import { AiAssistantService } from './ai.service';
       </button>
 
       @if (suggestion(); as text) {
-        <div class="mt-2 rounded border border-indigo-200 bg-indigo-50 p-2">
-          <p class="whitespace-pre-wrap text-sm text-slate-700">{{ text }}</p>
+        <div class="mt-2 rounded border border-indigo-200 bg-indigo-50 p-2 dark:border-indigo-800 dark:bg-indigo-950">
+          <p class="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{{ text }}</p>
           <div class="mt-2 flex gap-2">
             <button type="button" (click)="accept()" class="rounded bg-indigo-600 px-2 py-1 text-xs text-white">
               Accepter
             </button>
-            <button type="button" (click)="suggestion.set(null)" class="rounded border border-slate-300 px-2 py-1 text-xs text-slate-600">
+            <button type="button" (click)="suggestion.set(null)" class="rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 dark:border-slate-600 dark:text-slate-300">
               Ignorer
             </button>
           </div>
@@ -30,7 +30,7 @@ import { AiAssistantService } from './ai.service';
       }
 
       @if (error()) {
-        <p class="mt-1 text-xs text-red-600">Erreur lors de l'appel à l'IA.</p>
+        <p class="mt-1 text-xs text-red-600 dark:text-red-400">Erreur lors de l'appel à l'IA.</p>
       }
     </div>
   `,

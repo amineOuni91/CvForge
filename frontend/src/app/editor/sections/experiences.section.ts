@@ -26,36 +26,36 @@ const EMPTY_EXPERIENCE: Experience = {
   template: `
     <div cdkDropList class="space-y-4" (cdkDropListDropped)="onDrop($event)">
       @for (exp of experiences(); track $index) {
-        <div cdkDrag class="rounded border border-slate-200 p-3">
+        <div cdkDrag class="rounded border border-slate-200 p-3 dark:border-slate-700">
           <div class="mb-2 flex items-start justify-between gap-2">
             <span cdkDragHandle class="cursor-move pt-1.5 text-slate-400" title="Réordonner">⠿</span>
             <div class="grid flex-1 grid-cols-2 gap-2">
-              <input class="rounded border border-slate-300 px-2 py-1 text-sm" placeholder="Poste"
+              <input class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" placeholder="Poste"
                      [value]="exp.position" (input)="patch($index, { position: value($event) })" />
-              <input class="rounded border border-slate-300 px-2 py-1 text-sm" placeholder="Entreprise"
+              <input class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" placeholder="Entreprise"
                      [value]="exp.company" (input)="patch($index, { company: value($event) })" />
             </div>
-            <button type="button" (click)="remove($index)" class="text-sm text-red-600">Supprimer</button>
+            <button type="button" (click)="remove($index)" class="text-sm text-red-600 dark:text-red-400">Supprimer</button>
           </div>
 
           <div class="mb-2 grid grid-cols-4 gap-2">
-            <input class="rounded border border-slate-300 px-2 py-1 text-sm" placeholder="Ville"
+            <input class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" placeholder="Ville"
                    [value]="exp.city" (input)="patch($index, { city: value($event) })" />
-            <input class="rounded border border-slate-300 px-2 py-1 text-sm" placeholder="Pays"
+            <input class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" placeholder="Pays"
                    [value]="exp.country" (input)="patch($index, { country: value($event) })" />
-            <input type="month" class="rounded border border-slate-300 px-2 py-1 text-sm"
+            <input type="month" class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
                    [value]="exp.startDate" (input)="patch($index, { startDate: value($event) })" />
-            <input type="month" class="rounded border border-slate-300 px-2 py-1 text-sm" [disabled]="exp.isCurrent"
+            <input type="month" class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" [disabled]="exp.isCurrent"
                    [value]="exp.endDate ?? ''" (input)="patch($index, { endDate: value($event) })" />
           </div>
 
-          <label class="mb-2 flex items-center gap-1.5 text-sm text-slate-600">
+          <label class="mb-2 flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300">
             <input type="checkbox" [checked]="exp.isCurrent"
                    (change)="patch($index, { isCurrent: checked($event), endDate: checked($event) ? null : exp.endDate })" />
             Poste actuel
           </label>
 
-          <textarea rows="2" class="mb-1 w-full rounded border border-slate-300 px-2 py-1 text-sm" placeholder="Description"
+          <textarea rows="2" class="mb-1 w-full rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" placeholder="Description"
                     [value]="exp.description" (input)="patch($index, { description: textareaValue($event) })"></textarea>
 
           @if (exp.description) {
@@ -65,35 +65,35 @@ const EMPTY_EXPERIENCE: Experience = {
           }
 
           <div class="mb-2">
-            <span class="mb-1 block text-xs text-slate-500">Technologies</span>
+            <span class="mb-1 block text-xs text-slate-500 dark:text-slate-400">Technologies</span>
             <app-tag-input [values]="exp.technologies" placeholder="Ajouter une techno..."
                             (valuesChange)="patch($index, { technologies: $event })" />
           </div>
           <div class="mb-2">
-            <span class="mb-1 block text-xs text-slate-500">Missions</span>
+            <span class="mb-1 block text-xs text-slate-500 dark:text-slate-400">Missions</span>
             <app-tag-input [values]="exp.missions" placeholder="Ajouter une mission..."
                             (valuesChange)="patch($index, { missions: $event })" />
           </div>
           <div>
-            <span class="mb-1 block text-xs text-slate-500">Réalisations</span>
+            <span class="mb-1 block text-xs text-slate-500 dark:text-slate-400">Réalisations</span>
             <app-tag-input [values]="exp.achievements" placeholder="Ajouter une réalisation..."
                             (valuesChange)="patch($index, { achievements: $event })" />
             @if (exp.description) {
               <button type="button" (click)="generateAchievements($index)"
                       [disabled]="!ai.available() || generatingIndex() === $index"
                       [title]="ai.available() ? '' : 'Configurez ANTHROPIC_API_KEY pour activer l\\'assistant IA'"
-                      class="mt-1 text-xs font-medium text-indigo-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline">
+                      class="mt-1 text-xs font-medium text-indigo-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline dark:text-indigo-400">
                 {{ generatingIndex() === $index ? 'Génération...' : '✨ Générer des réalisations' }}
               </button>
               @if (pendingAchievements(); as pending) {
                 @if (pending.index === $index) {
-                  <div class="mt-2 rounded border border-indigo-200 bg-indigo-50 p-2">
-                    <ul class="list-disc pl-4 text-sm text-slate-700">
+                  <div class="mt-2 rounded border border-indigo-200 bg-indigo-50 p-2 dark:border-indigo-800 dark:bg-indigo-950">
+                    <ul class="list-disc pl-4 text-sm text-slate-700 dark:text-slate-200">
                       @for (item of pending.items; track item) { <li>{{ item }}</li> }
                     </ul>
                     <div class="mt-2 flex gap-2">
                       <button type="button" (click)="acceptAchievements($index)" class="rounded bg-indigo-600 px-2 py-1 text-xs text-white">Accepter</button>
-                      <button type="button" (click)="pendingAchievements.set(null)" class="rounded border border-slate-300 px-2 py-1 text-xs text-slate-600">Ignorer</button>
+                      <button type="button" (click)="pendingAchievements.set(null)" class="rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 dark:border-slate-600 dark:text-slate-300">Ignorer</button>
                     </div>
                   </div>
                 }
@@ -103,7 +103,7 @@ const EMPTY_EXPERIENCE: Experience = {
         </div>
       }
 
-      <button type="button" (click)="add()" class="w-full rounded border border-dashed border-slate-300 py-2 text-sm text-slate-600">
+      <button type="button" (click)="add()" class="w-full rounded border border-dashed border-slate-300 py-2 text-sm text-slate-600 dark:border-slate-600 dark:text-slate-300">
         + Ajouter une expérience
       </button>
     </div>

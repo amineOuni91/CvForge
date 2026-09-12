@@ -8,24 +8,24 @@ import { AuthService } from '../../core/auth.service';
   selector: 'app-profile',
   imports: [ReactiveFormsModule, TPipe],
   template: `
-    <main class="flex min-h-screen items-center justify-center bg-slate-100">
-      <div class="w-80 rounded-lg bg-white p-8 shadow-md">
-        <h1 class="mb-4 text-xl font-bold text-slate-800">{{ 'profile.title' | t }}</h1>
+    <main class="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-900">
+      <div class="w-80 rounded-lg bg-white p-8 shadow-md dark:bg-slate-800">
+        <h1 class="mb-4 text-xl font-bold text-slate-800 dark:text-slate-100">{{ 'profile.title' | t }}</h1>
 
-        <p class="mb-4 text-sm text-slate-500">{{ auth.currentUser()?.email }}</p>
+        <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">{{ auth.currentUser()?.email }}</p>
 
         <form [formGroup]="form" (ngSubmit)="save()">
-          <label class="mb-4 block text-sm">
+          <label class="mb-4 block text-sm dark:text-slate-200">
             {{ 'auth.displayName' | t }}
             <input
               type="text"
               formControlName="displayName"
-              class="mt-1 w-full rounded border border-slate-300 px-2 py-1"
+              class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
             />
           </label>
 
           @if (saved()) {
-            <p class="mb-3 text-sm text-green-700">{{ 'profile.saved' | t }}</p>
+            <p class="mb-3 text-sm text-green-700 dark:text-green-400">{{ 'profile.saved' | t }}</p>
           }
 
           <button
@@ -37,7 +37,7 @@ import { AuthService } from '../../core/auth.service';
           </button>
         </form>
 
-        <button (click)="logout()" class="mt-4 w-full rounded border border-slate-300 py-2 text-slate-700">
+        <button (click)="logout()" class="mt-4 w-full rounded border border-slate-300 py-2 text-slate-700 dark:border-slate-600 dark:text-slate-200">
           {{ 'profile.logout' | t }}
         </button>
       </div>

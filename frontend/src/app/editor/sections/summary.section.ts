@@ -9,7 +9,7 @@ import { AiSuggestion } from '../ai-suggestion.component';
   template: `
     <textarea
       rows="5"
-      class="w-full rounded border border-slate-300 px-2 py-1 text-sm"
+      class="w-full rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
       placeholder="Software Engineer avec 7 ans d'expérience..."
       [value]="summary()"
       (input)="update($event)"

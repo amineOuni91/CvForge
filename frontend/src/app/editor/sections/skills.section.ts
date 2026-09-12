@@ -12,18 +12,18 @@ const EMPTY_CATEGORY: SkillCategory = { name: '', skills: [] };
   template: `
     <div cdkDropList class="space-y-4" (cdkDropListDropped)="onDrop($event)">
       @for (cat of categories(); track $index) {
-        <div cdkDrag class="rounded border border-slate-200 p-3">
+        <div cdkDrag class="rounded border border-slate-200 p-3 dark:border-slate-700">
           <div class="mb-2 flex items-start justify-between gap-2">
             <span cdkDragHandle class="cursor-move text-slate-400" title="Réordonner">⠿</span>
-            <input class="flex-1 rounded border border-slate-300 px-2 py-1 text-sm" placeholder="Catégorie (ex. Backend)"
+            <input class="flex-1 rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" placeholder="Catégorie (ex. Backend)"
                    [value]="cat.name" (input)="patch($index, { name: value($event) })" />
-            <button type="button" (click)="remove($index)" class="text-sm text-red-600">Supprimer</button>
+            <button type="button" (click)="remove($index)" class="text-sm text-red-600 dark:text-red-400">Supprimer</button>
           </div>
           <app-tag-input [values]="cat.skills" placeholder="Ajouter une compétence..."
                           (valuesChange)="patch($index, { skills: $event })" />
         </div>
       }
-      <button type="button" (click)="add()" class="w-full rounded border border-dashed border-slate-300 py-2 text-sm text-slate-600">
+      <button type="button" (click)="add()" class="w-full rounded border border-dashed border-slate-300 py-2 text-sm text-slate-600 dark:border-slate-600 dark:text-slate-300">
         + Ajouter une catégorie
       </button>
     </div>

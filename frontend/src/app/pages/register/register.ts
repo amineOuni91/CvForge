@@ -8,34 +8,34 @@ import { AuthService } from '../../core/auth.service';
   selector: 'app-register',
   imports: [ReactiveFormsModule, RouterLink, TPipe],
   template: `
-    <main class="flex min-h-screen items-center justify-center bg-slate-100">
+    <main class="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-900">
       <form
         [formGroup]="form"
         (ngSubmit)="submit()"
-        class="w-80 rounded-lg bg-white p-8 shadow-md"
+        class="w-80 rounded-lg bg-white p-8 shadow-md dark:bg-slate-800"
       >
-        <h1 class="mb-4 text-xl font-bold text-slate-800">{{ 'auth.register.title' | t }}</h1>
+        <h1 class="mb-4 text-xl font-bold text-slate-800 dark:text-slate-100">{{ 'auth.register.title' | t }}</h1>
 
-        <label class="mb-3 block text-sm">
+        <label class="mb-3 block text-sm dark:text-slate-200">
           {{ 'auth.email' | t }}
           <input
             type="email"
             formControlName="email"
-            class="mt-1 w-full rounded border border-slate-300 px-2 py-1"
+            class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
           />
         </label>
 
-        <label class="mb-4 block text-sm">
+        <label class="mb-4 block text-sm dark:text-slate-200">
           {{ 'auth.password' | t }}
           <input
             type="password"
             formControlName="password"
-            class="mt-1 w-full rounded border border-slate-300 px-2 py-1"
+            class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
           />
         </label>
 
         @if (error()) {
-          <p class="mb-3 text-sm text-red-600">{{ error()! | t }}</p>
+          <p class="mb-3 text-sm text-red-600 dark:text-red-400">{{ error()! | t }}</p>
         }
 
         <button
@@ -46,9 +46,9 @@ import { AuthService } from '../../core/auth.service';
           {{ 'auth.register.submit' | t }}
         </button>
 
-        <div class="mt-4 text-sm">
+        <div class="mt-4 text-sm dark:text-slate-300">
           {{ 'auth.register.hasAccount' | t }}
-          <a routerLink="/login" class="text-slate-600 hover:underline">{{
+          <a routerLink="/login" class="text-slate-600 hover:underline dark:text-slate-300">{{
             'auth.register.login' | t
           }}</a>
         </div>

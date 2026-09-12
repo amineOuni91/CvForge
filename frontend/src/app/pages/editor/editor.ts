@@ -13,17 +13,17 @@ import { Skeleton } from '../../ui/skeleton';
   imports: [SectionList, PreviewPane, CustomizationPanel, AtsPanel, RouterLink, Skeleton],
   template: `
     <div class="flex h-screen flex-col">
-      <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2">
+      <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2 dark:border-slate-700 dark:bg-slate-800">
         <div class="flex items-center gap-3">
-          <a routerLink="/dashboard" class="text-sm text-slate-500 hover:underline">← CvForge</a>
-          <span class="font-medium text-slate-800">{{ store.name() }}</span>
+          <a routerLink="/dashboard" class="text-sm text-slate-500 hover:underline dark:text-slate-400">← CvForge</a>
+          <span class="font-medium text-slate-800 dark:text-slate-100">{{ store.name() }}</span>
         </div>
         <div class="flex items-center gap-3">
-          <span class="text-sm text-slate-500">{{ saveLabel() }}</span>
+          <span class="text-sm text-slate-500 dark:text-slate-400">{{ saveLabel() }}</span>
           <select
             [value]="store.exportFormat()"
             (change)="store.exportFormat.set($any($event.target).value)"
-            class="rounded border border-slate-300 px-2 py-1.5 text-sm text-slate-700"
+            class="rounded border border-slate-300 px-2 py-1.5 text-sm text-slate-700 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
           >
             <option value="pdf">PDF</option>
             <option value="docx">Word (.docx)</option>
@@ -44,35 +44,38 @@ import { Skeleton } from '../../ui/skeleton';
 
       @if (store.loading()) {
         <div class="flex flex-1 overflow-hidden">
-          <div class="w-full space-y-3 border-r border-slate-200 bg-white p-4 lg:w-[420px]">
+          <div class="w-full space-y-3 border-r border-slate-200 bg-white p-4 lg:w-[420px] dark:border-slate-700 dark:bg-slate-800">
             <app-skeleton extraClass="h-6 w-1/2" />
             <app-skeleton extraClass="h-4 w-full" />
             <app-skeleton extraClass="h-4 w-full" />
             <app-skeleton extraClass="h-4 w-2/3" />
           </div>
-          <div class="hidden flex-1 items-start justify-center bg-slate-200 p-8 lg:flex">
+          <div class="hidden flex-1 items-start justify-center bg-slate-200 p-8 lg:flex dark:bg-slate-900">
             <app-skeleton extraClass="aspect-[210/297] w-[420px]" />
           </div>
         </div>
       } @else {
         <div class="flex flex-1 overflow-hidden">
           <div [class]="editPanelClass()">
-            <div class="flex border-b border-slate-200">
+            <div class="flex border-b border-slate-200 dark:border-slate-700">
               <button type="button" (click)="leftTab.set('content')"
                       class="flex-1 py-2 text-sm font-medium"
                       [class.text-slate-800]="leftTab() === 'content'"
+                      [class.dark:text-slate-100]="leftTab() === 'content'"
                       [class.text-slate-400]="leftTab() !== 'content'">
                 Contenu
               </button>
               <button type="button" (click)="leftTab.set('design')"
                       class="flex-1 py-2 text-sm font-medium"
                       [class.text-slate-800]="leftTab() === 'design'"
+                      [class.dark:text-slate-100]="leftTab() === 'design'"
                       [class.text-slate-400]="leftTab() !== 'design'">
                 Template &amp; Design
               </button>
               <button type="button" (click)="leftTab.set('analysis')"
                       class="flex-1 py-2 text-sm font-medium"
                       [class.text-slate-800]="leftTab() === 'analysis'"
+                      [class.dark:text-slate-100]="leftTab() === 'analysis'"
                       [class.text-slate-400]="leftTab() !== 'analysis'">
                 ✨ Analyse
               </button>
@@ -88,16 +91,18 @@ import { Skeleton } from '../../ui/skeleton';
           </div>
         </div>
 
-        <div class="flex border-t border-slate-200 bg-white lg:hidden">
+        <div class="flex border-t border-slate-200 bg-white lg:hidden dark:border-slate-700 dark:bg-slate-800">
           <button type="button" (click)="mobileView.set('edit')"
                   class="flex-1 py-3 text-sm font-medium"
                   [class.text-slate-800]="mobileView() === 'edit'"
+                  [class.dark:text-slate-100]="mobileView() === 'edit'"
                   [class.text-slate-400]="mobileView() !== 'edit'">
             ✎ Éditer
           </button>
           <button type="button" (click)="mobileView.set('preview')"
                   class="flex-1 py-3 text-sm font-medium"
                   [class.text-slate-800]="mobileView() === 'preview'"
+                  [class.dark:text-slate-100]="mobileView() === 'preview'"
                   [class.text-slate-400]="mobileView() !== 'preview'">
             👁 Voir
           </button>
@@ -116,7 +121,7 @@ export class Editor implements OnInit {
 
   readonly editPanelClass = computed(
     () =>
-      `${this.mobileView() === 'edit' ? 'block' : 'hidden'} lg:block w-full overflow-y-auto border-r border-slate-200 bg-white lg:w-[420px]`,
+      `${this.mobileView() === 'edit' ? 'block' : 'hidden'} lg:block w-full overflow-y-auto border-r border-slate-200 bg-white lg:w-[420px] dark:border-slate-700 dark:bg-slate-800`,
   );
 
   readonly previewPanelClass = computed(

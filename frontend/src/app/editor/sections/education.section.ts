@@ -11,30 +11,30 @@ const EMPTY_EDUCATION: EducationEntry = {
   template: `
     <div class="space-y-4">
       @for (edu of education(); track $index) {
-        <div class="rounded border border-slate-200 p-3">
+        <div class="rounded border border-slate-200 p-3 dark:border-slate-700">
           <div class="mb-2 flex items-start justify-between gap-2">
             <div class="grid flex-1 grid-cols-2 gap-2">
-              <input class="rounded border border-slate-300 px-2 py-1 text-sm" placeholder="Diplôme"
+              <input class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" placeholder="Diplôme"
                      [value]="edu.degree" (input)="patch($index, { degree: value($event) })" />
-              <input class="rounded border border-slate-300 px-2 py-1 text-sm" placeholder="École"
+              <input class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" placeholder="École"
                      [value]="edu.school" (input)="patch($index, { school: value($event) })" />
             </div>
-            <button type="button" (click)="remove($index)" class="text-sm text-red-600">Supprimer</button>
+            <button type="button" (click)="remove($index)" class="text-sm text-red-600 dark:text-red-400">Supprimer</button>
           </div>
           <div class="mb-2 grid grid-cols-3 gap-2">
-            <input class="rounded border border-slate-300 px-2 py-1 text-sm" placeholder="Ville"
+            <input class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" placeholder="Ville"
                    [value]="edu.city" (input)="patch($index, { city: value($event) })" />
-            <input class="rounded border border-slate-300 px-2 py-1 text-sm" placeholder="Pays"
+            <input class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" placeholder="Pays"
                    [value]="edu.country" (input)="patch($index, { country: value($event) })" />
             <input type="number" min="1950" max="2099" placeholder="Année d'obtention"
-                   class="rounded border border-slate-300 px-2 py-1 text-sm"
+                   class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
                    [value]="edu.graduationYear" (input)="patch($index, { graduationYear: value($event) })" />
           </div>
-          <textarea rows="2" class="w-full rounded border border-slate-300 px-2 py-1 text-sm" placeholder="Description"
+          <textarea rows="2" class="w-full rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" placeholder="Description"
                     [value]="edu.description" (input)="patch($index, { description: textareaValue($event) })"></textarea>
         </div>
       }
-      <button type="button" (click)="add()" class="w-full rounded border border-dashed border-slate-300 py-2 text-sm text-slate-600">
+      <button type="button" (click)="add()" class="w-full rounded border border-dashed border-slate-300 py-2 text-sm text-slate-600 dark:border-slate-600 dark:text-slate-300">
         + Ajouter une formation
       </button>
     </div>

@@ -1,3 +1,12 @@
 /* You can add global styles to this file, and also import other style files */
 @import "tailwindcss";
 @import "./app/templates/cv-base.css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Default text color for dark mode so unstyled/plain-text elements (labels, prose)
+   stay readable without needing a dark: class on every single one. Elements with an
+   explicit text-* color keep using that (and its dark: variant where one is set). */
+html.dark body {
+  color: #e2e8f0;
+}

@@ -8,25 +8,25 @@ import { AuthService } from '../../core/auth.service';
   selector: 'app-forgot-password',
   imports: [ReactiveFormsModule, RouterLink, TPipe],
   template: `
-    <main class="flex min-h-screen items-center justify-center bg-slate-100">
+    <main class="flex min-h-screen items-center justify-center bg-slate-100 dark:bg-slate-900">
       <form
         [formGroup]="form"
         (ngSubmit)="submit()"
-        class="w-80 rounded-lg bg-white p-8 shadow-md"
+        class="w-80 rounded-lg bg-white p-8 shadow-md dark:bg-slate-800"
       >
-        <h1 class="mb-4 text-xl font-bold text-slate-800">{{ 'auth.forgot.title' | t }}</h1>
+        <h1 class="mb-4 text-xl font-bold text-slate-800 dark:text-slate-100">{{ 'auth.forgot.title' | t }}</h1>
 
-        <label class="mb-4 block text-sm">
+        <label class="mb-4 block text-sm dark:text-slate-200">
           {{ 'auth.email' | t }}
           <input
             type="email"
             formControlName="email"
-            class="mt-1 w-full rounded border border-slate-300 px-2 py-1"
+            class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
           />
         </label>
 
         @if (sent()) {
-          <p class="mb-3 text-sm text-green-700">{{ 'auth.forgot.sent' | t }}</p>
+          <p class="mb-3 text-sm text-green-700 dark:text-green-400">{{ 'auth.forgot.sent' | t }}</p>
         }
 
         <button
@@ -38,7 +38,7 @@ import { AuthService } from '../../core/auth.service';
         </button>
 
         <div class="mt-4 text-sm">
-          <a routerLink="/reset-password" class="text-slate-600 hover:underline">{{
+          <a routerLink="/reset-password" class="text-slate-600 hover:underline dark:text-slate-300">{{
             'auth.reset.title' | t
           }}</a>
         </div>

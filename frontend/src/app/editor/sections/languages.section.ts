@@ -10,18 +10,18 @@ const EMPTY_LANGUAGE: LanguageEntry = { name: '', level: 'B1' };
     <div class="space-y-2">
       @for (lang of languages(); track $index) {
         <div class="flex items-center gap-2">
-          <input class="flex-1 rounded border border-slate-300 px-2 py-1 text-sm" placeholder="Langue"
+          <input class="flex-1 rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" placeholder="Langue"
                  [value]="lang.name" (input)="patch($index, { name: value($event) })" />
-          <select class="rounded border border-slate-300 px-2 py-1 text-sm" [value]="lang.level"
+          <select class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" [value]="lang.level"
                   (change)="patch($index, { level: value($event) })">
             @for (level of levels; track level) {
               <option [value]="level">{{ level }}</option>
             }
           </select>
-          <button type="button" (click)="remove($index)" class="text-sm text-red-600">Supprimer</button>
+          <button type="button" (click)="remove($index)" class="text-sm text-red-600 dark:text-red-400">Supprimer</button>
         </div>
       }
-      <button type="button" (click)="add()" class="w-full rounded border border-dashed border-slate-300 py-2 text-sm text-slate-600">
+      <button type="button" (click)="add()" class="w-full rounded border border-dashed border-slate-300 py-2 text-sm text-slate-600 dark:border-slate-600 dark:text-slate-300">
         + Ajouter une langue
       </button>
     </div>
