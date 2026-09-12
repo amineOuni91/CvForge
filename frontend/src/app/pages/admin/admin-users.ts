@@ -2,7 +2,7 @@ import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL } from '../../core/api-config';
 import { TPipe } from '../../core/t.pipe';
@@ -208,7 +208,7 @@ type PendingAction =
               </tr>
             }
             @for (user of filteredUsers(); track user.id) {
-              <tr class="border-b border-slate-100 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/40">
+              <tr [id]="'admin-user-' + user.id" class="border-b border-slate-100 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/40">
                 @if (selectionMode()) {
                   <td class="p-3">
                     <input type="checkbox" [checked]="selectedIds().has(user.id)" (change)="toggleOne(user.id, $any($event.target).checked)" />
@@ -371,6 +371,7 @@ type PendingAction =
 export class AdminUsers implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly i18n = inject(I18nService);
+  private readonly route = inject(ActivatedRoute);
 
   readonly users = signal<AdminUser[]>([]);
   readonly searchQuery = signal('');
@@ -451,6 +452,9 @@ export class AdminUsers implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.reload();
+    const expandUserId = this.route.snapshot.queryParamMap.get('expand');
+    const user = expandUserId ? this.users().find((u) => u.id === expandUserId) : undefined;
+    if (user) await this.toggleExpand(user);
   }
 
   private async reload(): Promise<void> {
@@ -586,6 +590,7 @@ export class AdminUsers implements OnInit {
     this.expandedDetail.set(detail);
     this.userCvs.set(cvs);
     this.detailForm.patchValue({ displayName: detail.displayName, personalInfo: detail.profileInfo });
+    queueMicrotask(() => document.getElementById(`admin-user-${user.id}`)?.scrollIntoView({ block: 'center' }));
   }
 
   async saveDetail(user: AdminUser): Promise<void> {
