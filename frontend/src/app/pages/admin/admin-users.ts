@@ -8,6 +8,7 @@ import { API_BASE_URL } from '../../core/api-config';
 import { TPipe } from '../../core/t.pipe';
 import { I18nService } from '../../core/i18n.service';
 import { Modal } from '../../ui/modal';
+import { PasswordInput } from '../../ui/password-input';
 
 export interface AdminUser {
   id: string;
@@ -44,6 +45,7 @@ export interface AdminCvSummary {
 type PendingAction =
   | { kind: 'role'; user: AdminUser; newRole: 'admin' | 'visitor' }
   | { kind: 'activate'; user: AdminUser }
+  | { kind: 'deactivate'; user: AdminUser }
   | { kind: 'delete'; user: AdminUser }
   | { kind: 'deleteCv'; user: AdminUser; cv: AdminCvSummary }
   | { kind: 'bulkRole'; users: AdminUser[]; newRole: 'admin' | 'visitor' }
@@ -52,7 +54,7 @@ type PendingAction =
 
 @Component({
   selector: 'app-admin-users',
-  imports: [ReactiveFormsModule, RouterLink, TPipe, Modal, DatePipe],
+  imports: [ReactiveFormsModule, RouterLink, TPipe, Modal, DatePipe, PasswordInput],
   template: `
     <main class="min-h-screen bg-slate-100 p-6 dark:bg-slate-900">
       <div class="mx-auto mb-6 max-w-5xl">
@@ -108,7 +110,7 @@ type PendingAction =
           </label>
           <label class="text-sm dark:text-slate-200">
             {{ 'admin.createUser.password' | t }}
-            <input type="password" formControlName="password" class="mt-1 block rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+            <app-password-input formControlName="password" class="mt-1 w-40" />
           </label>
           <label class="text-sm dark:text-slate-200">
             {{ 'admin.createUser.role' | t }}
@@ -247,11 +249,16 @@ type PendingAction =
                     @if (!user.emailConfirmed) {
                       <button type="button" (click)="askActivate(user)" [title]="'admin.action.activate' | t" [attr.aria-label]="'admin.action.activate' | t"
                               class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100">
-                        ✅
+                        🔓
+                      </button>
+                    } @else {
+                      <button type="button" (click)="askDeactivate(user)" [title]="'admin.action.deactivate' | t" [attr.aria-label]="'admin.action.deactivate' | t"
+                              class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100">
+                        🔒
                       </button>
                     }
                     @if (resettingId() === user.id) {
-                      <input #newPasswordInput type="password" [placeholder]="'admin.createUser.password' | t" class="w-28 rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+                      <app-password-input #newPasswordInput [placeholder]="'admin.createUser.password' | t" [compact]="true" class="w-28" />
                       <button type="button" (click)="confirmResetPassword(user, newPasswordInput.value)" [title]="'admin.action.confirm' | t" [attr.aria-label]="'admin.action.confirm' | t"
                               class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100">
                         ✔️
@@ -333,12 +340,36 @@ type PendingAction =
                     } @else {
                       <ul class="divide-y divide-slate-100 dark:divide-slate-700">
                         @for (cv of userCvs(); track cv.id) {
-                          <li class="flex items-center justify-between py-1.5 text-sm">
-                            <a [routerLink]="['/admin/users', user.id, 'cvs', cv.id]" class="text-slate-700 hover:underline dark:text-slate-200">{{ cv.name }} <span class="text-xs text-slate-400">({{ cv.updatedAt | date: 'dd/MM/yy HH:mm' }})</span></a>
-                            <button type="button" (click)="askDeleteCv(user, cv)" [title]="'admin.action.delete' | t" [attr.aria-label]="'admin.action.delete' | t"
-                                    class="rounded-full p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300">
-                              🗑️
-                            </button>
+                          <li class="flex items-center justify-between gap-2 py-1.5 text-sm">
+                            @if (renamingCvId() === cv.id) {
+                              <input
+                                #renameCvInput
+                                class="min-w-0 flex-1 rounded border border-slate-300 px-1 py-0.5 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                                [value]="cv.name"
+                                (keydown.enter)="commitRenameCv(user, cv, renameCvInput.value)"
+                                (blur)="commitRenameCv(user, cv, renameCvInput.value)"
+                              />
+                            } @else {
+                              <a [routerLink]="['/admin/users', user.id, 'cvs', cv.id]" class="min-w-0 flex-1 truncate text-slate-700 hover:underline dark:text-slate-200">
+                                {{ cv.name }} <span class="text-xs text-slate-400">({{ cv.updatedAt | date: 'dd/MM/yy HH:mm' }})</span>
+                              </a>
+                            }
+                            <div class="flex shrink-0 items-center gap-1">
+                              <button type="button" (click)="startRenameCv(cv)" title="Renommer" class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100">
+                                ✎
+                              </button>
+                              <button type="button" (click)="duplicateCv(user, cv)" title="Dupliquer" class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100">
+                                ⧉
+                              </button>
+                              <button type="button" (click)="downloadCv(user, cv)" [disabled]="downloadingCvId() === cv.id" title="Exporter en PDF"
+                                      class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100">
+                                ⤓
+                              </button>
+                              <button type="button" (click)="askDeleteCv(user, cv)" [title]="'admin.action.delete' | t" [attr.aria-label]="'admin.action.delete' | t"
+                                      class="rounded-full p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300">
+                                🗑️
+                              </button>
+                            </div>
                           </li>
                         }
                       </ul>
@@ -426,6 +457,8 @@ export class AdminUsers implements OnInit {
   readonly userCvs = signal<AdminCvSummary[]>([]);
   readonly savingDetail = signal(false);
   readonly detailSaved = signal(false);
+  readonly renamingCvId = signal<string | null>(null);
+  readonly downloadingCvId = signal<string | null>(null);
 
   readonly createForm = new FormGroup({
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
@@ -567,12 +600,53 @@ export class AdminUsers implements OnInit {
     this.pending.set({ kind: 'activate', user });
   }
 
+  askDeactivate(user: AdminUser): void {
+    this.pending.set({ kind: 'deactivate', user });
+  }
+
   askDelete(user: AdminUser): void {
     this.pending.set({ kind: 'delete', user });
   }
 
   askDeleteCv(user: AdminUser, cv: AdminCvSummary): void {
     this.pending.set({ kind: 'deleteCv', user, cv });
+  }
+
+  startRenameCv(cv: AdminCvSummary): void {
+    this.renamingCvId.set(cv.id);
+  }
+
+  async commitRenameCv(user: AdminUser, cv: AdminCvSummary, name: string): Promise<void> {
+    this.renamingCvId.set(null);
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === cv.name) return;
+    const updated = await firstValueFrom(
+      this.http.patch<AdminCvSummary>(`${API_BASE_URL}/api/admin/users/${user.id}/cvs/${cv.id}/name`, { name: trimmed }),
+    );
+    this.userCvs.update((list) => list.map((c) => (c.id === cv.id ? updated : c)));
+  }
+
+  async duplicateCv(user: AdminUser, cv: AdminCvSummary): Promise<void> {
+    await firstValueFrom(this.http.post(`${API_BASE_URL}/api/admin/users/${user.id}/cvs/${cv.id}/duplicate`, {}));
+    const cvs = await firstValueFrom(this.http.get<AdminCvSummary[]>(`${API_BASE_URL}/api/admin/users/${user.id}/cvs`));
+    this.userCvs.set(cvs);
+  }
+
+  async downloadCv(user: AdminUser, cv: AdminCvSummary): Promise<void> {
+    this.downloadingCvId.set(cv.id);
+    try {
+      const blob = await firstValueFrom(
+        this.http.get(`${API_BASE_URL}/api/admin/users/${user.id}/cvs/${cv.id}/export/pdf`, { responseType: 'blob' }),
+      );
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${cv.name}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      this.downloadingCvId.set(null);
+    }
   }
 
   async toggleExpand(user: AdminUser): Promise<void> {
@@ -615,6 +689,8 @@ export class AdminUsers implements OnInit {
         return `Changer le rôle de ${action.user.email} ?`;
       case 'activate':
         return `Activer le compte de ${action.user.email} ?`;
+      case 'deactivate':
+        return `Désactiver le compte de ${action.user.email} ?`;
       case 'delete':
         return `Supprimer ${action.user.email} ?`;
       case 'deleteCv':
@@ -634,6 +710,8 @@ export class AdminUsers implements OnInit {
         return `Nouveau rôle : ${action.newRole === 'admin' ? 'Administrateur' : 'Visiteur'}.`;
       case 'activate':
         return 'Le compte sera marqué confirmé sans code ni email.';
+      case 'deactivate':
+        return 'Le compte sera marqué non confirmé.';
       case 'delete':
         return 'Cette action est définitive : le compte et tous ses CV seront supprimés.';
       case 'deleteCv':
@@ -664,6 +742,9 @@ export class AdminUsers implements OnInit {
         await this.reload();
       } else if (action.kind === 'activate') {
         await firstValueFrom(this.http.post(`${API_BASE_URL}/api/admin/users/${action.user.id}/activate`, {}));
+        await this.reload();
+      } else if (action.kind === 'deactivate') {
+        await firstValueFrom(this.http.post(`${API_BASE_URL}/api/admin/users/${action.user.id}/deactivate`, {}));
         await this.reload();
       } else if (action.kind === 'delete') {
         await firstValueFrom(this.http.delete(`${API_BASE_URL}/api/admin/users/${action.user.id}`));

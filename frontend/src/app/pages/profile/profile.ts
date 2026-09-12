@@ -10,10 +10,11 @@ import { I18nService } from '../../core/i18n.service';
 import { API_BASE_URL } from '../../core/api-config';
 import { CvSummary } from '../../models/cv-document';
 import { Modal } from '../../ui/modal';
+import { PasswordInput } from '../../ui/password-input';
 
 @Component({
   selector: 'app-profile',
-  imports: [ReactiveFormsModule, RouterLink, TPipe, DatePipe, Modal],
+  imports: [ReactiveFormsModule, RouterLink, TPipe, DatePipe, Modal, PasswordInput],
   template: `
     <main class="min-h-screen bg-slate-100 p-6 dark:bg-slate-900">
       <div class="mx-auto mb-6 max-w-6xl">
@@ -21,13 +22,10 @@ import { Modal } from '../../ui/modal';
         <p class="text-sm text-slate-500 dark:text-slate-400">{{ auth.currentUser()?.email }}</p>
       </div>
 
-      <div class="mx-auto grid max-w-6xl gap-6" [class.md:grid-cols-4]="showConfirmColumn()" [class.md:grid-cols-3]="!showConfirmColumn()">
+      <div class="mx-auto grid max-w-6xl gap-6" [class.md:grid-cols-4]="showConfirmColumn() || showAdminColumn()" [class.md:grid-cols-3]="!showConfirmColumn() && !showAdminColumn()">
         <!-- Colonne 1 : Mes CV -->
-        <div class="rounded-lg bg-white p-6 shadow-md dark:bg-slate-800">
+        <div class="rounded-lg bg-white p-6 shadow-md dark:bg-slate-800 md:h-[75vh] md:overflow-y-auto">
           <h2 class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ 'profile.myCvs.title' | t }}</h2>
-          @if (auth.currentUser()?.role === 'admin') {
-            <a routerLink="/admin" class="mb-3 block text-sm text-slate-600 hover:underline dark:text-slate-300">{{ 'admin.title' | t }}</a>
-          }
           @if (cvs().length === 0) {
             <p class="mb-4 text-sm text-slate-400 dark:text-slate-500">{{ 'dashboard.empty' | t }}</p>
           } @else {
@@ -47,7 +45,7 @@ import { Modal } from '../../ui/modal';
         </div>
 
         <!-- Colonne 2 : Identité -->
-        <div class="rounded-lg bg-white p-6 shadow-md dark:bg-slate-800">
+        <div class="rounded-lg bg-white p-6 shadow-md dark:bg-slate-800 md:h-[75vh] md:overflow-y-auto">
           <form [formGroup]="form" (ngSubmit)="save()">
             <label class="mb-4 block text-sm dark:text-slate-200">
               {{ 'auth.displayName' | t }}
@@ -111,7 +109,7 @@ import { Modal } from '../../ui/modal';
         </div>
 
         <!-- Colonne 3 : Sécurité -->
-        <div class="rounded-lg bg-white p-6 shadow-md dark:bg-slate-800">
+        <div class="rounded-lg bg-white p-6 shadow-md dark:bg-slate-800 md:h-[75vh] md:overflow-y-auto">
           <h2 class="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ 'profile.email.title' | t }}</h2>
           <p class="mb-3 text-xs text-slate-400 dark:text-slate-500">{{ 'profile.email.hint' | t }}</p>
 
@@ -165,35 +163,44 @@ import { Modal } from '../../ui/modal';
 
           <hr class="my-6 border-slate-200 dark:border-slate-700" />
 
-          <h2 class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ 'profile.password.title' | t }}</h2>
-          <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
-            <label class="mb-3 block text-sm dark:text-slate-200">
-              {{ 'profile.password.old' | t }}
-              <input type="password" formControlName="oldPassword" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
-            </label>
-            <label class="mb-1 block text-sm dark:text-slate-200">
-              {{ 'profile.password.new' | t }}
-              <input type="password" formControlName="newPassword" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
-            </label>
-            <p class="mb-3 text-xs text-slate-400 dark:text-slate-500">{{ 'profile.password.hint' | t }}</p>
-            <label class="mb-3 block text-sm dark:text-slate-200">
-              {{ 'profile.password.confirm' | t }}
-              <input type="password" formControlName="confirmPassword" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
-            </label>
+          <button
+            type="button"
+            (click)="showPasswordForm.set(!showPasswordForm())"
+            class="mb-1 flex w-full items-center justify-between text-sm font-semibold text-slate-700 dark:text-slate-200"
+          >
+            {{ 'profile.password.title' | t }}
+            <span class="text-slate-400 dark:text-slate-500">{{ showPasswordForm() ? '▲' : '▼' }}</span>
+          </button>
+          @if (showPasswordForm()) {
+            <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="mt-3">
+              <label class="mb-3 block text-sm dark:text-slate-200">
+                {{ 'profile.password.old' | t }}
+                <app-password-input formControlName="oldPassword" class="mt-1" />
+              </label>
+              <label class="mb-1 block text-sm dark:text-slate-200">
+                {{ 'profile.password.new' | t }}
+                <app-password-input formControlName="newPassword" class="mt-1" />
+              </label>
+              <p class="mb-3 text-xs text-slate-400 dark:text-slate-500">{{ 'profile.password.hint' | t }}</p>
+              <label class="mb-3 block text-sm dark:text-slate-200">
+                {{ 'profile.password.confirm' | t }}
+                <app-password-input formControlName="confirmPassword" class="mt-1" />
+              </label>
 
-            @if (passwordMessage(); as msg) {
-              <p class="mb-3 text-sm" [class.text-green-700]="passwordSuccess()" [class.dark:text-green-400]="passwordSuccess()"
-                 [class.text-red-600]="!passwordSuccess()" [class.dark:text-red-400]="!passwordSuccess()">{{ msg }}</p>
-            }
+              @if (passwordMessage(); as msg) {
+                <p class="mb-3 text-sm" [class.text-green-700]="passwordSuccess()" [class.dark:text-green-400]="passwordSuccess()"
+                   [class.text-red-600]="!passwordSuccess()" [class.dark:text-red-400]="!passwordSuccess()">{{ msg }}</p>
+              }
 
-            <button
-              type="submit"
-              [disabled]="passwordForm.invalid || changingPassword()"
-              class="w-full rounded bg-slate-800 py-2 text-white disabled:opacity-50"
-            >
-              {{ 'profile.password.submit' | t }}
-            </button>
-          </form>
+              <button
+                type="submit"
+                [disabled]="passwordForm.invalid || changingPassword()"
+                class="w-full rounded bg-slate-800 py-2 text-white disabled:opacity-50"
+              >
+                {{ 'profile.password.submit' | t }}
+              </button>
+            </form>
+          }
 
           <hr class="my-6 border-slate-200 dark:border-slate-700" />
 
@@ -208,7 +215,7 @@ import { Modal } from '../../ui/modal';
           <form [formGroup]="deleteAccountForm" (ngSubmit)="confirmingDeleteAccount.set(true)">
             <label class="mb-3 block text-sm dark:text-slate-200">
               {{ 'profile.password.old' | t }}
-              <input type="password" formControlName="password" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+              <app-password-input formControlName="password" class="mt-1" />
             </label>
 
             @if (deleteAccountMessage(); as msg) {
@@ -249,9 +256,39 @@ import { Modal } from '../../ui/modal';
           </app-modal>
         }
 
-        <!-- Colonne 4 : Confirmation du compte (si email non confirmé) -->
+        <!-- Colonne 4 : Administration (admin uniquement) -->
+        @if (showAdminColumn()) {
+          <div class="rounded-lg bg-white p-6 shadow-md dark:bg-slate-800 md:h-[75vh] md:overflow-y-auto">
+            <h2 class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ 'admin.title' | t }}</h2>
+            @if (adminStats(); as stats) {
+              <div class="mb-4 grid grid-cols-2 gap-3">
+                <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700">
+                  <p class="text-xl font-bold text-slate-800 dark:text-slate-100">{{ stats.total }}</p>
+                  <p class="text-xs text-slate-400 dark:text-slate-500">{{ 'admin.stats.total' | t }}</p>
+                </div>
+                <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700">
+                  <p class="text-xl font-bold text-green-700 dark:text-green-400">{{ stats.confirmed }}</p>
+                  <p class="text-xs text-slate-400 dark:text-slate-500">{{ 'admin.stats.confirmed' | t }}</p>
+                </div>
+                <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700">
+                  <p class="text-xl font-bold text-indigo-700 dark:text-indigo-400">{{ stats.admins }}</p>
+                  <p class="text-xs text-slate-400 dark:text-slate-500">{{ 'admin.stats.admins' | t }}</p>
+                </div>
+                <div class="rounded-lg bg-slate-50 p-3 dark:bg-slate-700">
+                  <p class="text-xl font-bold text-slate-800 dark:text-slate-100">{{ stats.totalCvs }}</p>
+                  <p class="text-xs text-slate-400 dark:text-slate-500">{{ 'admin.stats.totalCvs' | t }}</p>
+                </div>
+              </div>
+            }
+            <a routerLink="/admin" class="block w-full rounded bg-slate-800 py-2 text-center text-sm text-white hover:bg-slate-700">
+              {{ 'admin.title' | t }}
+            </a>
+          </div>
+        }
+
+        <!-- Colonne 5 : Confirmation du compte (si email non confirmé) -->
         @if (showConfirmColumn()) {
-          <div class="rounded-lg bg-white p-6 shadow-md dark:bg-slate-800">
+          <div class="rounded-lg bg-white p-6 shadow-md dark:bg-slate-800 md:h-[75vh] md:overflow-y-auto">
             <h2 class="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ 'auth.confirm.title' | t }}</h2>
             <p class="mb-3 text-xs text-slate-400 dark:text-slate-500">{{ 'auth.confirm.hint' | t }}</p>
 
@@ -308,6 +345,7 @@ export class Profile implements OnInit {
   readonly changingPassword = signal(false);
   readonly passwordMessage = signal<string | null>(null);
   readonly passwordSuccess = signal(false);
+  readonly showPasswordForm = signal(false);
 
   readonly cvs = signal<CvSummary[]>([]);
   readonly recentCvs = computed(() =>
@@ -323,6 +361,8 @@ export class Profile implements OnInit {
   readonly showConfirmColumn = computed(
     () => this.auth.currentUser()?.emailConfirmed === false && this.auth.currentUser()?.role !== 'admin',
   );
+  readonly showAdminColumn = computed(() => this.auth.currentUser()?.role === 'admin');
+  readonly adminStats = signal<{ total: number; confirmed: number; admins: number; totalCvs: number } | null>(null);
   readonly confirming = signal(false);
   readonly confirmMessage = signal<string | null>(null);
   readonly confirmSuccess = signal(false);
@@ -380,6 +420,18 @@ export class Profile implements OnInit {
   async ngOnInit(): Promise<void> {
     const cvs = await firstValueFrom(this.http.get<CvSummary[]>(`${API_BASE_URL}/api/cvs`));
     this.cvs.set(cvs);
+
+    if (this.showAdminColumn()) {
+      const users = await firstValueFrom(
+        this.http.get<{ emailConfirmed: boolean; role: string; cvCount: number }[]>(`${API_BASE_URL}/api/admin/users`),
+      );
+      this.adminStats.set({
+        total: users.length,
+        confirmed: users.filter((u) => u.emailConfirmed).length,
+        admins: users.filter((u) => u.role === 'admin').length,
+        totalCvs: users.reduce((sum, u) => sum + u.cvCount, 0),
+      });
+    }
   }
 
   async save(): Promise<void> {

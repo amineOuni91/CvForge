@@ -164,6 +164,22 @@ public class AdminTests(DatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task Deactivate_SetsEmailConfirmedBackToFalse()
+    {
+        var (adminClient, _, _) = await TestUser.CreateAuthenticatedAdminClientWithEmailAsync(fixture.Factory);
+        var (_, targetEmail) = await TestUser.CreateAuthenticatedClientWithEmailAsync(fixture.Factory);
+        var targetId = (await adminClient.GetFromJsonAsync<List<AdminUserDto>>("/api/admin/users"))!
+            .Single(u => u.Email == targetEmail).Id;
+        await adminClient.PostAsync($"/api/admin/users/{targetId}/activate", null);
+
+        var response = await adminClient.PostAsync($"/api/admin/users/{targetId}/deactivate", null);
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+
+        var detail = await adminClient.GetFromJsonAsync<AdminUserDetailDto>($"/api/admin/users/{targetId}");
+        Assert.False(detail!.EmailConfirmed);
+    }
+
+    [Fact]
     public async Task DeleteUser_RemovesTheAccount()
     {
         var (adminClient, _, _) = await TestUser.CreateAuthenticatedAdminClientWithEmailAsync(fixture.Factory);
@@ -216,6 +232,34 @@ public class AdminTests(DatabaseFixture fixture)
 
         var getAfterDelete = await ownerClient.GetAsync($"/api/cvs/{cvId}");
         Assert.Equal(System.Net.HttpStatusCode.NotFound, getAfterDelete.StatusCode);
+    }
+
+    [Fact]
+    public async Task AdminCanRenameDuplicateAndExportAnotherUsersCv()
+    {
+        var (adminClient, _, _) = await TestUser.CreateAuthenticatedAdminClientWithEmailAsync(fixture.Factory);
+        var (ownerClient, ownerEmail) = await TestUser.CreateAuthenticatedClientWithEmailAsync(fixture.Factory);
+        var ownerId = (await adminClient.GetFromJsonAsync<List<AdminUserDto>>("/api/admin/users"))!
+            .Single(u => u.Email == ownerEmail).Id;
+        var createResponse = await ownerClient.PostAsJsonAsync("/api/cvs", new { });
+        var cvId = (await createResponse.Content.ReadFromJsonAsync<CvSummaryDto>())!.Id;
+
+        var renameResponse = await adminClient.PatchAsJsonAsync($"/api/admin/users/{ownerId}/cvs/{cvId}/name", new { name = "Renamed by admin" });
+        Assert.Equal(System.Net.HttpStatusCode.OK, renameResponse.StatusCode);
+        var renamed = await renameResponse.Content.ReadFromJsonAsync<CvSummaryDto>();
+        Assert.Equal("Renamed by admin", renamed!.Name);
+
+        var duplicateResponse = await adminClient.PostAsync($"/api/admin/users/{ownerId}/cvs/{cvId}/duplicate", null);
+        Assert.Equal(System.Net.HttpStatusCode.Created, duplicateResponse.StatusCode);
+        var duplicated = await duplicateResponse.Content.ReadFromJsonAsync<CvSummaryDto>();
+        Assert.Equal("Renamed by admin (copie)", duplicated!.Name);
+
+        var ownerCvs = await ownerClient.GetFromJsonAsync<List<CvSummaryDto>>("/api/cvs");
+        Assert.Contains(ownerCvs!, c => c.Id == duplicated.Id);
+
+        var exportResponse = await adminClient.GetAsync($"/api/admin/users/{ownerId}/cvs/{cvId}/export/json");
+        Assert.Equal(System.Net.HttpStatusCode.OK, exportResponse.StatusCode);
+        Assert.StartsWith("application/json", exportResponse.Content.Headers.ContentType!.ToString());
     }
 
     [Fact]

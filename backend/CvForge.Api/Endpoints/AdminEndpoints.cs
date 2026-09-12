@@ -1,6 +1,9 @@
 using System.Security.Claims;
+using System.Text.Json;
 using CvForge.Api.Data;
 using CvForge.Api.Domain;
+using CvForge.Api.Services;
+using CvForge.Api.Services.DocxExport;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -96,6 +99,16 @@ public static class AdminEndpoints
             return Results.Ok();
         });
 
+        group.MapPost("/users/{id}/deactivate", async (string id, UserManager<AppUser> userManager) =>
+        {
+            var user = await userManager.FindByIdAsync(id);
+            if (user is null) return Results.NotFound();
+
+            user.EmailConfirmed = false;
+            await userManager.UpdateAsync(user);
+            return Results.Ok();
+        });
+
         group.MapDelete("/users/{id}", async (string id, ClaimsPrincipal principal, UserManager<AppUser> userManager) =>
         {
             var callerId = userManager.GetUserId(principal)!;
@@ -126,6 +139,48 @@ public static class AdminEndpoints
         {
             var cv = await db.LoadOwnedCvAsync(id, cvId);
             return cv is null ? Results.NotFound() : Results.Ok(cv);
+        });
+
+        group.MapPatch("/users/{id}/cvs/{cvId:guid}/name", async (string id, Guid cvId, RenameCvRequest request, AppDbContext db) =>
+        {
+            var cv = await db.LoadOwnedCvAsync(id, cvId);
+            if (cv is null) return Results.NotFound();
+
+            cv.Name = request.Name;
+            cv.UpdatedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+            return Results.Ok(new CvSummaryDto(cv.Id, cv.Name, cv.CreatedAt, cv.UpdatedAt));
+        });
+
+        group.MapPost("/users/{id}/cvs/{cvId:guid}/duplicate", async (string id, Guid cvId, AppDbContext db) =>
+        {
+            var source = await db.LoadOwnedCvAsync(id, cvId);
+            if (source is null) return Results.NotFound();
+
+            var copy = new Cv
+            {
+                UserId = id,
+                Name = $"{source.Name} (copie)",
+                Document = JsonSerializer.Deserialize<CvDocument>(JsonSerializer.Serialize(source.Document))!,
+            };
+            db.Cvs.Add(copy);
+            await db.SaveChangesAsync();
+            return Results.Created($"/api/admin/users/{id}/cvs/{copy.Id}", new CvSummaryDto(copy.Id, copy.Name, copy.CreatedAt, copy.UpdatedAt));
+        });
+
+        group.MapGet("/users/{id}/cvs/{cvId:guid}/export/{format}", async (
+            string id,
+            Guid cvId,
+            string format,
+            AppDbContext db,
+            PdfService pdfService,
+            DocxExportService docxExportService,
+            TxtExportService txtExportService) =>
+        {
+            var cv = await db.LoadOwnedCvAsync(id, cvId);
+            if (cv is null) return Results.NotFound();
+
+            return await ExportEndpoints.RenderExportAsync(cv, format, pdfService, docxExportService, txtExportService);
         });
 
         group.MapPut("/users/{id}/cvs/{cvId:guid}", async (
