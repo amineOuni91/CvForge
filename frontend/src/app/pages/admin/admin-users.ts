@@ -84,10 +84,9 @@ type PendingAction =
 
       <div class="mx-auto max-w-5xl overflow-x-auto rounded-lg bg-white shadow-md dark:bg-slate-800">
         <table class="w-full text-left text-sm">
-          <thead class="border-b border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          <thead class="border-b border-slate-200 text-xs font-medium tracking-wide text-slate-400 uppercase dark:border-slate-700 dark:text-slate-500">
             <tr>
               <th class="p-3">{{ 'admin.table.email' | t }}</th>
-              <th class="p-3">{{ 'admin.table.displayName' | t }}</th>
               <th class="p-3">{{ 'admin.table.confirmed' | t }}</th>
               <th class="p-3">{{ 'admin.table.role' | t }}</th>
               <th class="p-3">{{ 'admin.table.actions' | t }}</th>
@@ -95,9 +94,18 @@ type PendingAction =
           </thead>
           <tbody>
             @for (user of users(); track user.id) {
-              <tr class="border-b border-slate-100 dark:border-slate-700">
-                <td class="p-3 text-slate-800 dark:text-slate-100">{{ user.email }}</td>
-                <td class="p-3 text-slate-600 dark:text-slate-300">{{ user.displayName }}</td>
+              <tr class="border-b border-slate-100 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/40">
+                <td class="p-3">
+                  <div class="flex items-center gap-3">
+                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                      {{ user.email.charAt(0).toUpperCase() }}
+                    </span>
+                    <div class="min-w-0">
+                      <p class="truncate font-medium text-slate-800 dark:text-slate-100">{{ user.displayName || user.email }}</p>
+                      <p class="truncate text-xs text-slate-400 dark:text-slate-500">{{ user.email }}</p>
+                    </div>
+                  </div>
+                </td>
                 <td class="p-3">
                   <span class="rounded-full px-2 py-0.5 text-xs" [class.bg-green-100]="user.emailConfirmed" [class.text-green-700]="user.emailConfirmed"
                         [class.bg-amber-100]="!user.emailConfirmed" [class.text-amber-700]="!user.emailConfirmed">
@@ -108,37 +116,43 @@ type PendingAction =
                   <select
                     [value]="user.role"
                     (change)="askRoleChange(user, $any($event.target).value)"
-                    class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+                    class="rounded border border-slate-300 bg-transparent px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
                   >
                     <option value="visitor">{{ 'admin.role.visitor' | t }}</option>
                     <option value="admin">{{ 'admin.role.admin' | t }}</option>
                   </select>
                 </td>
                 <td class="p-3">
-                  <div class="flex flex-wrap gap-2 text-xs">
+                  <div class="flex flex-wrap items-center gap-1">
                     @if (!user.emailConfirmed) {
-                      <button type="button" (click)="askActivate(user)" class="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:text-slate-200">
-                        {{ 'admin.action.activate' | t }}
+                      <button type="button" (click)="askActivate(user)" [title]="'admin.action.activate' | t" [attr.aria-label]="'admin.action.activate' | t"
+                              class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100">
+                        ✅
                       </button>
                     }
                     @if (resettingId() === user.id) {
-                      <input #newPasswordInput type="password" [placeholder]="'admin.createUser.password' | t" class="w-28 rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
-                      <button type="button" (click)="confirmResetPassword(user, newPasswordInput.value)" class="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:text-slate-200">
-                        {{ 'admin.action.confirm' | t }}
+                      <input #newPasswordInput type="password" [placeholder]="'admin.createUser.password' | t" class="w-28 rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+                      <button type="button" (click)="confirmResetPassword(user, newPasswordInput.value)" [title]="'admin.action.confirm' | t" [attr.aria-label]="'admin.action.confirm' | t"
+                              class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100">
+                        ✔️
                       </button>
-                      <button type="button" (click)="resettingId.set(null)" class="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:text-slate-200">
-                        {{ 'admin.action.cancel' | t }}
+                      <button type="button" (click)="resettingId.set(null)" [title]="'admin.action.cancel' | t" [attr.aria-label]="'admin.action.cancel' | t"
+                              class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100">
+                        ✖️
                       </button>
                     } @else {
-                      <button type="button" (click)="resettingId.set(user.id)" class="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:text-slate-200">
-                        {{ 'admin.action.resetPassword' | t }}
+                      <button type="button" (click)="resettingId.set(user.id)" [title]="'admin.action.resetPassword' | t" [attr.aria-label]="'admin.action.resetPassword' | t"
+                              class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100">
+                        🔑
                       </button>
                     }
-                    <button type="button" (click)="toggleExpand(user)" class="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:text-slate-200">
-                      {{ 'admin.action.viewEdit' | t }}
+                    <button type="button" (click)="toggleExpand(user)" [title]="'admin.action.viewEdit' | t" [attr.aria-label]="'admin.action.viewEdit' | t"
+                            class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100">
+                      ✏️
                     </button>
-                    <button type="button" (click)="askDelete(user)" class="rounded border border-red-300 px-2 py-1 text-red-600 dark:border-red-800 dark:text-red-400">
-                      {{ 'admin.action.delete' | t }}
+                    <button type="button" (click)="askDelete(user)" [title]="'admin.action.delete' | t" [attr.aria-label]="'admin.action.delete' | t"
+                            class="rounded-full p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300">
+                      🗑️
                     </button>
                   </div>
                   @if (actionMessage()?.userId === user.id) {
@@ -148,7 +162,7 @@ type PendingAction =
               </tr>
               @if (expandedId() === user.id && expandedDetail(); as detail) {
                 <tr class="border-b border-slate-100 bg-slate-50 dark:border-slate-700 dark:bg-slate-900">
-                  <td colspan="5" class="p-4">
+                  <td colspan="4" class="p-4">
                     <form [formGroup]="detailForm" (ngSubmit)="saveDetail(user)" class="mb-4 grid grid-cols-2 gap-3">
                       <label class="text-sm dark:text-slate-200">{{ 'auth.displayName' | t }}
                         <input formControlName="displayName" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
@@ -197,12 +211,13 @@ type PendingAction =
                     @if (userCvs().length === 0) {
                       <p class="text-sm text-slate-400 dark:text-slate-500">{{ 'dashboard.empty' | t }}</p>
                     } @else {
-                      <ul class="space-y-1">
+                      <ul class="divide-y divide-slate-100 dark:divide-slate-700">
                         @for (cv of userCvs(); track cv.id) {
-                          <li class="flex items-center justify-between text-sm">
+                          <li class="flex items-center justify-between py-1.5 text-sm">
                             <a [routerLink]="['/admin/users', user.id, 'cvs', cv.id]" class="text-slate-700 hover:underline dark:text-slate-200">{{ cv.name }} <span class="text-xs text-slate-400">({{ cv.updatedAt | date: 'dd/MM/yy HH:mm' }})</span></a>
-                            <button type="button" (click)="askDeleteCv(user, cv)" class="rounded border border-red-300 px-2 py-0.5 text-xs text-red-600 dark:border-red-800 dark:text-red-400">
-                              {{ 'admin.action.delete' | t }}
+                            <button type="button" (click)="askDeleteCv(user, cv)" [title]="'admin.action.delete' | t" [attr.aria-label]="'admin.action.delete' | t"
+                                    class="rounded-full p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300">
+                              🗑️
                             </button>
                           </li>
                         }
