@@ -130,4 +130,6 @@ export const en: Record<string, string> = {
   'admin.action.confirm': 'Confirm',
   'admin.action.cancel': 'Cancel',
   'admin.action.delete': 'Delete',
+  'admin.action.viewEdit': 'View / Edit',
+  'admin.cvs.title': 'CVs',
 };

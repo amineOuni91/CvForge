@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -16,14 +17,38 @@ export interface AdminUser {
   role: 'admin' | 'visitor';
 }
 
+export interface AdminUserDetail extends AdminUser {
+  profileInfo: {
+    firstName: string;
+    lastName: string;
+    jobTitle: string;
+    email: string;
+    phone: string;
+    city: string;
+    country: string;
+    linkedIn: string;
+    gitHub: string;
+    portfolio: string;
+    website: string;
+  };
+}
+
+export interface AdminCvSummary {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 type PendingAction =
   | { kind: 'role'; user: AdminUser; newRole: 'admin' | 'visitor' }
   | { kind: 'activate'; user: AdminUser }
-  | { kind: 'delete'; user: AdminUser };
+  | { kind: 'delete'; user: AdminUser }
+  | { kind: 'deleteCv'; user: AdminUser; cv: AdminCvSummary };
 
 @Component({
   selector: 'app-admin-users',
-  imports: [ReactiveFormsModule, RouterLink, TPipe, Modal],
+  imports: [ReactiveFormsModule, RouterLink, TPipe, Modal, DatePipe],
   template: `
     <main class="min-h-screen bg-slate-100 p-6 dark:bg-slate-900">
       <div class="mx-auto mb-6 max-w-5xl">
@@ -109,6 +134,9 @@ type PendingAction =
                         {{ 'admin.action.resetPassword' | t }}
                       </button>
                     }
+                    <button type="button" (click)="toggleExpand(user)" class="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:text-slate-200">
+                      {{ 'admin.action.viewEdit' | t }}
+                    </button>
                     <button type="button" (click)="askDelete(user)" class="rounded border border-red-300 px-2 py-1 text-red-600 dark:border-red-800 dark:text-red-400">
                       {{ 'admin.action.delete' | t }}
                     </button>
@@ -118,6 +146,71 @@ type PendingAction =
                   }
                 </td>
               </tr>
+              @if (expandedId() === user.id && expandedDetail(); as detail) {
+                <tr class="border-b border-slate-100 bg-slate-50 dark:border-slate-700 dark:bg-slate-900">
+                  <td colspan="5" class="p-4">
+                    <form [formGroup]="detailForm" (ngSubmit)="saveDetail(user)" class="mb-4 grid grid-cols-2 gap-3">
+                      <label class="text-sm dark:text-slate-200">{{ 'auth.displayName' | t }}
+                        <input formControlName="displayName" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+                      </label>
+                      <div formGroupName="personalInfo" class="col-span-2 grid grid-cols-2 gap-3">
+                        <label class="text-sm dark:text-slate-200">{{ 'profile.firstName' | t }}
+                          <input formControlName="firstName" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+                        </label>
+                        <label class="text-sm dark:text-slate-200">{{ 'profile.lastName' | t }}
+                          <input formControlName="lastName" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+                        </label>
+                        <label class="col-span-2 text-sm dark:text-slate-200">{{ 'profile.jobTitle' | t }}
+                          <input formControlName="jobTitle" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+                        </label>
+                        <label class="text-sm dark:text-slate-200">{{ 'profile.phone' | t }}
+                          <input formControlName="phone" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+                        </label>
+                        <label class="text-sm dark:text-slate-200">{{ 'profile.city' | t }}
+                          <input formControlName="city" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+                        </label>
+                        <label class="text-sm dark:text-slate-200">{{ 'profile.country' | t }}
+                          <input formControlName="country" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+                        </label>
+                        <label class="text-sm dark:text-slate-200">{{ 'profile.linkedIn' | t }}
+                          <input formControlName="linkedIn" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+                        </label>
+                        <label class="text-sm dark:text-slate-200">{{ 'profile.gitHub' | t }}
+                          <input formControlName="gitHub" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+                        </label>
+                        <label class="text-sm dark:text-slate-200">{{ 'profile.portfolio' | t }}
+                          <input formControlName="portfolio" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+                        </label>
+                        <label class="text-sm dark:text-slate-200">{{ 'profile.website' | t }}
+                          <input formControlName="website" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
+                        </label>
+                      </div>
+                      <button type="submit" [disabled]="detailForm.invalid || savingDetail()" class="col-span-2 rounded bg-slate-800 px-4 py-1.5 text-sm text-white disabled:opacity-50">
+                        {{ 'profile.save' | t }}
+                      </button>
+                      @if (detailSaved()) {
+                        <p class="col-span-2 text-sm text-green-700 dark:text-green-400">{{ 'profile.saved' | t }}</p>
+                      }
+                    </form>
+
+                    <h3 class="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ 'admin.cvs.title' | t }}</h3>
+                    @if (userCvs().length === 0) {
+                      <p class="text-sm text-slate-400 dark:text-slate-500">{{ 'dashboard.empty' | t }}</p>
+                    } @else {
+                      <ul class="space-y-1">
+                        @for (cv of userCvs(); track cv.id) {
+                          <li class="flex items-center justify-between text-sm">
+                            <a [routerLink]="['/admin/users', user.id, 'cvs', cv.id]" class="text-slate-700 hover:underline dark:text-slate-200">{{ cv.name }} <span class="text-xs text-slate-400">({{ cv.updatedAt | date: 'dd/MM/yy HH:mm' }})</span></a>
+                            <button type="button" (click)="askDeleteCv(user, cv)" class="rounded border border-red-300 px-2 py-0.5 text-xs text-red-600 dark:border-red-800 dark:text-red-400">
+                              {{ 'admin.action.delete' | t }}
+                            </button>
+                          </li>
+                        }
+                      </ul>
+                    }
+                  </td>
+                </tr>
+              }
             }
           </tbody>
         </table>
@@ -150,11 +243,33 @@ export class AdminUsers implements OnInit {
   readonly resettingId = signal<string | null>(null);
   readonly pending = signal<PendingAction | null>(null);
   readonly actionMessage = signal<{ userId: string; text: string } | null>(null);
+  readonly expandedId = signal<string | null>(null);
+  readonly expandedDetail = signal<AdminUserDetail | null>(null);
+  readonly userCvs = signal<AdminCvSummary[]>([]);
+  readonly savingDetail = signal(false);
+  readonly detailSaved = signal(false);
 
   readonly createForm = new FormGroup({
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
     password: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(6)] }),
     role: new FormControl<'admin' | 'visitor'>('visitor', { nonNullable: true }),
+  });
+
+  readonly detailForm = new FormGroup({
+    displayName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    personalInfo: new FormGroup({
+      firstName: new FormControl('', { nonNullable: true }),
+      lastName: new FormControl('', { nonNullable: true }),
+      jobTitle: new FormControl('', { nonNullable: true }),
+      email: new FormControl('', { nonNullable: true }),
+      phone: new FormControl('', { nonNullable: true }),
+      city: new FormControl('', { nonNullable: true }),
+      country: new FormControl('', { nonNullable: true }),
+      linkedIn: new FormControl('', { nonNullable: true }),
+      gitHub: new FormControl('', { nonNullable: true }),
+      portfolio: new FormControl('', { nonNullable: true }),
+      website: new FormControl('', { nonNullable: true }),
+    }),
   });
 
   async ngOnInit(): Promise<void> {
@@ -196,6 +311,43 @@ export class AdminUsers implements OnInit {
     this.pending.set({ kind: 'delete', user });
   }
 
+  askDeleteCv(user: AdminUser, cv: AdminCvSummary): void {
+    this.pending.set({ kind: 'deleteCv', user, cv });
+  }
+
+  async toggleExpand(user: AdminUser): Promise<void> {
+    if (this.expandedId() === user.id) {
+      this.expandedId.set(null);
+      this.expandedDetail.set(null);
+      return;
+    }
+    this.expandedId.set(user.id);
+    this.detailSaved.set(false);
+    const [detail, cvs] = await Promise.all([
+      firstValueFrom(this.http.get<AdminUserDetail>(`${API_BASE_URL}/api/admin/users/${user.id}`)),
+      firstValueFrom(this.http.get<AdminCvSummary[]>(`${API_BASE_URL}/api/admin/users/${user.id}/cvs`)),
+    ]);
+    this.expandedDetail.set(detail);
+    this.userCvs.set(cvs);
+    this.detailForm.patchValue({ displayName: detail.displayName, personalInfo: detail.profileInfo });
+  }
+
+  async saveDetail(user: AdminUser): Promise<void> {
+    if (this.detailForm.invalid) return;
+    this.savingDetail.set(true);
+    this.detailSaved.set(false);
+    try {
+      const { displayName, personalInfo } = this.detailForm.getRawValue();
+      await firstValueFrom(
+        this.http.patch(`${API_BASE_URL}/api/admin/users/${user.id}`, { displayName, personalInfo, email: user.email, role: user.role }),
+      );
+      this.detailSaved.set(true);
+      await this.reload();
+    } finally {
+      this.savingDetail.set(false);
+    }
+  }
+
   confirmTitle(action: PendingAction): string {
     switch (action.kind) {
       case 'role':
@@ -204,6 +356,8 @@ export class AdminUsers implements OnInit {
         return `Activer le compte de ${action.user.email} ?`;
       case 'delete':
         return `Supprimer ${action.user.email} ?`;
+      case 'deleteCv':
+        return `Supprimer « ${action.cv.name} » ?`;
     }
   }
 
@@ -215,6 +369,8 @@ export class AdminUsers implements OnInit {
         return 'Le compte sera marqué confirmé sans code ni email.';
       case 'delete':
         return 'Cette action est définitive : le compte et tous ses CV seront supprimés.';
+      case 'deleteCv':
+        return 'Cette action est définitive.';
     }
   }
 
@@ -225,11 +381,8 @@ export class AdminUsers implements OnInit {
 
     try {
       if (action.kind === 'role') {
-        // PATCH takes the whole editable record at once (same contract as PATCH /api/auth/me
-        // elsewhere in this app) — fetch the current detail first so this role-only change
-        // doesn't blank out the target's displayName/personalInfo.
         const detail = await firstValueFrom(
-          this.http.get<AdminRoleChangeDetail>(`${API_BASE_URL}/api/admin/users/${action.user.id}`),
+          this.http.get<AdminUserDetail>(`${API_BASE_URL}/api/admin/users/${action.user.id}`),
         );
         const body = {
           displayName: detail.displayName,
@@ -238,12 +391,17 @@ export class AdminUsers implements OnInit {
           role: action.newRole,
         };
         await firstValueFrom(this.http.patch(`${API_BASE_URL}/api/admin/users/${action.user.id}`, body));
+        await this.reload();
       } else if (action.kind === 'activate') {
         await firstValueFrom(this.http.post(`${API_BASE_URL}/api/admin/users/${action.user.id}/activate`, {}));
-      } else {
+        await this.reload();
+      } else if (action.kind === 'delete') {
         await firstValueFrom(this.http.delete(`${API_BASE_URL}/api/admin/users/${action.user.id}`));
+        await this.reload();
+      } else {
+        await firstValueFrom(this.http.delete(`${API_BASE_URL}/api/admin/users/${action.user.id}/cvs/${action.cv.id}`));
+        this.userCvs.update((list) => list.filter((c) => c.id !== action.cv.id));
       }
-      await this.reload();
     } catch {
       this.actionMessage.set({ userId: action.user.id, text: "Échec de l'action." });
     }
@@ -258,15 +416,4 @@ export class AdminUsers implements OnInit {
       this.actionMessage.set({ userId: user.id, text: 'Mot de passe refusé (critères non respectés).' });
     }
   }
-}
-
-/**
- * Narrow shape for the get-before-patch in confirmPending's 'role' branch — this task doesn't
- * introduce the full `AdminUserDetail` interface yet (that's Task 7), just the 3 fields needed
- * to round-trip a role-only change without touching anything else.
- */
-interface AdminRoleChangeDetail {
-  displayName: string;
-  profileInfo: unknown;
-  email: string;
 }
