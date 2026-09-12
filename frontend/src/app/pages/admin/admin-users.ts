@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -83,6 +83,35 @@ type PendingAction =
         }
       </div>
 
+      <div class="mx-auto mb-3 flex max-w-5xl flex-wrap items-center gap-3">
+        <input
+          type="search"
+          [value]="searchQuery()"
+          (input)="searchQuery.set($any($event.target).value)"
+          [placeholder]="'admin.filter.search' | t"
+          class="min-w-48 flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+        />
+        <select
+          [value]="roleFilter()"
+          (change)="roleFilter.set($any($event.target).value)"
+          class="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+        >
+          <option value="all">{{ 'admin.filter.allRoles' | t }}</option>
+          <option value="visitor">{{ 'admin.role.visitor' | t }}</option>
+          <option value="admin">{{ 'admin.role.admin' | t }}</option>
+        </select>
+        <select
+          [value]="confirmedFilter()"
+          (change)="confirmedFilter.set($any($event.target).value)"
+          class="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+        >
+          <option value="all">{{ 'admin.filter.allStatuses' | t }}</option>
+          <option value="yes">{{ 'admin.confirmed.yes' | t }}</option>
+          <option value="no">{{ 'admin.confirmed.no' | t }}</option>
+        </select>
+        <span class="text-xs text-slate-400 dark:text-slate-500">{{ filteredUsers().length }} / {{ users().length }}</span>
+      </div>
+
       <div class="mx-auto max-w-5xl overflow-x-auto rounded-lg bg-white shadow-md dark:bg-slate-800">
         <table class="w-full text-left text-sm">
           <thead class="border-b border-slate-200 text-xs font-medium tracking-wide text-slate-400 uppercase dark:border-slate-700 dark:text-slate-500">
@@ -95,7 +124,12 @@ type PendingAction =
             </tr>
           </thead>
           <tbody>
-            @for (user of users(); track user.id) {
+            @if (filteredUsers().length === 0) {
+              <tr>
+                <td colspan="5" class="p-6 text-center text-sm text-slate-400 dark:text-slate-500">{{ 'admin.filter.noResults' | t }}</td>
+              </tr>
+            }
+            @for (user of filteredUsers(); track user.id) {
               <tr class="border-b border-slate-100 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/40">
                 <td class="p-3">
                   <div class="flex items-center gap-3">
@@ -256,6 +290,20 @@ export class AdminUsers implements OnInit {
   private readonly i18n = inject(I18nService);
 
   readonly users = signal<AdminUser[]>([]);
+  readonly searchQuery = signal('');
+  readonly roleFilter = signal<'all' | 'admin' | 'visitor'>('all');
+  readonly confirmedFilter = signal<'all' | 'yes' | 'no'>('all');
+  readonly filteredUsers = computed(() => {
+    const query = this.searchQuery().trim().toLowerCase();
+    const role = this.roleFilter();
+    const confirmed = this.confirmedFilter();
+    return this.users().filter((user) => {
+      if (query && !user.email.toLowerCase().includes(query) && !user.displayName.toLowerCase().includes(query)) return false;
+      if (role !== 'all' && user.role !== role) return false;
+      if (confirmed !== 'all' && user.emailConfirmed !== (confirmed === 'yes')) return false;
+      return true;
+    });
+  });
   readonly creating = signal(false);
   readonly createError = signal<string | null>(null);
   readonly resettingId = signal<string | null>(null);
