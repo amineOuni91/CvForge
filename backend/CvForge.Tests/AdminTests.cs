@@ -47,6 +47,20 @@ public class AdminTests(DatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task ListUsers_ReportsCvCountPerUser()
+    {
+        var (adminClient, _, _) = await TestUser.CreateAuthenticatedAdminClientWithEmailAsync(fixture.Factory);
+        var (ownerClient, ownerEmail) = await TestUser.CreateAuthenticatedClientWithEmailAsync(fixture.Factory);
+
+        await ownerClient.PostAsJsonAsync("/api/cvs", new { });
+        await ownerClient.PostAsJsonAsync("/api/cvs", new { });
+
+        var users = await adminClient.GetFromJsonAsync<List<AdminUserDto>>("/api/admin/users");
+
+        Assert.Equal(2, users!.Single(u => u.Email == ownerEmail).CvCount);
+    }
+
+    [Fact]
     public async Task CreateUser_ThenGetOne_ReturnsCreatedAccountConfirmedWithRequestedRole()
     {
         var (client, _, _) = await TestUser.CreateAuthenticatedAdminClientWithEmailAsync(fixture.Factory);
@@ -223,7 +237,7 @@ public class AdminTests(DatabaseFixture fixture)
     }
 
     private record MeDto(string Id, string Email, string DisplayName, bool EmailConfirmed, string Role);
-    private record AdminUserDto(string Id, string Email, string DisplayName, bool EmailConfirmed, string Role);
+    private record AdminUserDto(string Id, string Email, string DisplayName, bool EmailConfirmed, string Role, int CvCount);
     private record AdminUserDetailDto(string Id, string Email, string DisplayName, PersonalInfoDto ProfileInfo, bool EmailConfirmed, string Role);
     private record PersonalInfoDto(string FirstName, string LastName, string JobTitle, string Email, string Phone, string City, string Country, string LinkedIn, string GitHub, string Portfolio, string Website);
     private record AccessTokenResponseDto(string TokenType, string AccessToken, int ExpiresIn, string RefreshToken);

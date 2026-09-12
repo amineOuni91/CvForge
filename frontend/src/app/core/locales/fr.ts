@@ -120,6 +120,7 @@ export const fr: Record<string, string> = {
   'admin.role.visitor': 'Visiteur',
   'admin.table.email': 'Utilisateur',
   'admin.table.confirmed': 'Confirmé',
+  'admin.table.cvCount': 'CV',
   'admin.table.role': 'Rôle',
   'admin.confirmed.yes': 'Oui',
   'admin.confirmed.no': 'Non',

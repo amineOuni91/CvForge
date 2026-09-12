@@ -13,12 +13,17 @@ public static class AdminEndpoints
 
     public static void MapAdminEndpoints(this RouteGroupBuilder group)
     {
-        group.MapGet("/users", async (ClaimsPrincipal principal, UserManager<AppUser> userManager) =>
+        group.MapGet("/users", async (ClaimsPrincipal principal, AppDbContext db, UserManager<AppUser> userManager) =>
         {
             var callerId = userManager.GetUserId(principal)!;
+            var cvCounts = await db.Cvs
+                .GroupBy(c => c.UserId)
+                .Select(g => new { UserId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(g => g.UserId, g => g.Count);
+
             var users = new List<AdminUserDto>();
             foreach (var user in userManager.Users.Where(u => u.Id != callerId).ToList())
-                users.Add(new AdminUserDto(user.Id, user.Email!, user.DisplayName, user.EmailConfirmed, await RoleNameAsync(userManager, user)));
+                users.Add(new AdminUserDto(user.Id, user.Email!, user.DisplayName, user.EmailConfirmed, await RoleNameAsync(userManager, user), cvCounts.GetValueOrDefault(user.Id)));
             return Results.Ok(users);
         });
 
@@ -32,7 +37,7 @@ public static class AdminEndpoints
             if (IsAdminRole(request.Role))
                 await userManager.AddToRoleAsync(user, AdminRole);
 
-            return Results.Created($"/api/admin/users/{user.Id}", new AdminUserDto(user.Id, user.Email!, user.DisplayName, user.EmailConfirmed, await RoleNameAsync(userManager, user)));
+            return Results.Created($"/api/admin/users/{user.Id}", new AdminUserDto(user.Id, user.Email!, user.DisplayName, user.EmailConfirmed, await RoleNameAsync(userManager, user), CvCount: 0));
         });
 
         group.MapGet("/users/{id}", async (string id, UserManager<AppUser> userManager) =>
@@ -159,7 +164,7 @@ public static class AdminEndpoints
         await userManager.IsInRoleAsync(user, AdminRole) ? "admin" : "visitor";
 }
 
-public record AdminUserDto(string Id, string Email, string DisplayName, bool EmailConfirmed, string Role);
+public record AdminUserDto(string Id, string Email, string DisplayName, bool EmailConfirmed, string Role, int CvCount);
 public record AdminUserDetailDto(string Id, string Email, string DisplayName, PersonalInfo ProfileInfo, bool EmailConfirmed, string Role);
 public record CreateAdminUserRequest(string Email, string Password, string Role);
 public record UpdateAdminUserRequest(string DisplayName, PersonalInfo PersonalInfo, string Email, string Role);
