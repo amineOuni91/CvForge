@@ -59,6 +59,46 @@ type PendingAction =
         <h1 class="text-xl font-bold text-slate-800 dark:text-slate-100">{{ 'admin.title' | t }}</h1>
       </div>
 
+      <div class="mx-auto mb-6 grid max-w-5xl grid-cols-2 gap-3 sm:grid-cols-4">
+        <button type="button" (click)="resetFilters()" class="rounded-lg bg-white p-4 text-left shadow-md transition-shadow hover:shadow-lg dark:bg-slate-800">
+          <p class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ stats().total }}</p>
+          <p class="text-xs text-slate-400 dark:text-slate-500">{{ 'admin.stats.total' | t }}</p>
+        </button>
+        <button type="button" (click)="toggleConfirmedFilter('yes')" [class.ring-2]="confirmedFilter() === 'yes'"
+                class="rounded-lg bg-white p-4 text-left shadow-md ring-green-400 transition-shadow hover:shadow-lg dark:bg-slate-800">
+          <p class="text-2xl font-bold text-green-700 dark:text-green-400">{{ stats().confirmed }}</p>
+          <p class="text-xs text-slate-400 dark:text-slate-500">{{ 'admin.stats.confirmed' | t }}</p>
+        </button>
+        <button type="button" (click)="toggleConfirmedFilter('no')" [class.ring-2]="confirmedFilter() === 'no'"
+                class="rounded-lg bg-white p-4 text-left shadow-md ring-amber-400 transition-shadow hover:shadow-lg dark:bg-slate-800">
+          <p class="text-2xl font-bold text-amber-600 dark:text-amber-400">{{ stats().unconfirmed }}</p>
+          <p class="text-xs text-slate-400 dark:text-slate-500">{{ 'admin.stats.unconfirmed' | t }}</p>
+        </button>
+        <button type="button" (click)="toggleAdminFilter()" [class.ring-2]="roleFilter() === 'admin'"
+                class="rounded-lg bg-white p-4 text-left shadow-md ring-indigo-400 transition-shadow hover:shadow-lg dark:bg-slate-800">
+          <p class="text-2xl font-bold text-indigo-700 dark:text-indigo-400">{{ stats().admins }}</p>
+          <p class="text-xs text-slate-400 dark:text-slate-500">{{ 'admin.stats.admins' | t }}</p>
+        </button>
+        <button type="button" (click)="toggleCvFilter('yes')" [class.ring-2]="cvFilter() === 'yes'"
+                class="rounded-lg bg-white p-4 text-left shadow-md ring-slate-400 transition-shadow hover:shadow-lg dark:bg-slate-800">
+          <p class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ stats().withCv }}</p>
+          <p class="text-xs text-slate-400 dark:text-slate-500">{{ 'admin.stats.withCv' | t }}</p>
+        </button>
+        <button type="button" (click)="toggleCvFilter('no')" [class.ring-2]="cvFilter() === 'no'"
+                class="rounded-lg bg-white p-4 text-left shadow-md ring-slate-400 transition-shadow hover:shadow-lg dark:bg-slate-800">
+          <p class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ stats().withoutCv }}</p>
+          <p class="text-xs text-slate-400 dark:text-slate-500">{{ 'admin.stats.withoutCv' | t }}</p>
+        </button>
+        <div class="rounded-lg bg-white p-4 shadow-md dark:bg-slate-800">
+          <p class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ stats().totalCvs }}</p>
+          <p class="text-xs text-slate-400 dark:text-slate-500">{{ 'admin.stats.totalCvs' | t }}</p>
+        </div>
+        <div class="rounded-lg bg-white p-4 shadow-md dark:bg-slate-800">
+          <p class="text-2xl font-bold text-slate-800 dark:text-slate-100">{{ stats().avgCvs }}</p>
+          <p class="text-xs text-slate-400 dark:text-slate-500">{{ 'admin.stats.avgCvs' | t }}</p>
+        </div>
+      </div>
+
       <div class="mx-auto mb-6 max-w-5xl rounded-lg bg-white p-6 shadow-md dark:bg-slate-800">
         <h2 class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ 'admin.createUser.title' | t }}</h2>
         <form [formGroup]="createForm" (ngSubmit)="createUser()" class="flex flex-wrap items-end gap-3">
@@ -336,16 +376,37 @@ export class AdminUsers implements OnInit {
   readonly searchQuery = signal('');
   readonly roleFilter = signal<'all' | 'admin' | 'visitor'>('all');
   readonly confirmedFilter = signal<'all' | 'yes' | 'no'>('all');
+  readonly cvFilter = signal<'all' | 'yes' | 'no'>('all');
   readonly filteredUsers = computed(() => {
     const query = this.searchQuery().trim().toLowerCase();
     const role = this.roleFilter();
     const confirmed = this.confirmedFilter();
+    const hasCv = this.cvFilter();
     return this.users().filter((user) => {
       if (query && !user.email.toLowerCase().includes(query) && !user.displayName.toLowerCase().includes(query)) return false;
       if (role !== 'all' && user.role !== role) return false;
       if (confirmed !== 'all' && user.emailConfirmed !== (confirmed === 'yes')) return false;
+      if (hasCv !== 'all' && (user.cvCount > 0) !== (hasCv === 'yes')) return false;
       return true;
     });
+  });
+  readonly stats = computed(() => {
+    const list = this.users();
+    const total = list.length;
+    const confirmed = list.filter((u) => u.emailConfirmed).length;
+    const admins = list.filter((u) => u.role === 'admin').length;
+    const withCv = list.filter((u) => u.cvCount > 0).length;
+    const totalCvs = list.reduce((sum, u) => sum + u.cvCount, 0);
+    return {
+      total,
+      confirmed,
+      unconfirmed: total - confirmed,
+      admins,
+      withCv,
+      withoutCv: total - withCv,
+      totalCvs,
+      avgCvs: total > 0 ? Math.round((totalCvs / total) * 10) / 10 : 0,
+    };
   });
   readonly selectionMode = signal(false);
   readonly selectedIds = signal<Set<string>>(new Set());
@@ -427,6 +488,25 @@ export class AdminUsers implements OnInit {
   toggleSelectionMode(): void {
     this.selectionMode.update((v) => !v);
     if (!this.selectionMode()) this.clearSelection();
+  }
+
+  toggleConfirmedFilter(value: 'yes' | 'no'): void {
+    this.confirmedFilter.set(this.confirmedFilter() === value ? 'all' : value);
+  }
+
+  toggleAdminFilter(): void {
+    this.roleFilter.set(this.roleFilter() === 'admin' ? 'all' : 'admin');
+  }
+
+  toggleCvFilter(value: 'yes' | 'no'): void {
+    this.cvFilter.set(this.cvFilter() === value ? 'all' : value);
+  }
+
+  resetFilters(): void {
+    this.searchQuery.set('');
+    this.roleFilter.set('all');
+    this.confirmedFilter.set('all');
+    this.cvFilter.set('all');
   }
 
   onBulkRoleSelect(value: string): void {
