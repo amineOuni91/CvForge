@@ -103,6 +103,8 @@ app.MapGroup("/api/import").RequireRateLimiting(AiRateLimitPolicy).MapImportEndp
 // public: shown on the landing page, no account data exposed
 app.MapGroup("/api/stats").MapStatsEndpoints();
 
+app.MapGroup("/api/admin").RequireAuthorization("AdminOnly").MapAdminEndpoints();
+
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
