@@ -10,7 +10,7 @@ import { Modal } from './modal';
     <button
       type="button"
       (click)="confirming.set(true)"
-      class="fixed bottom-32 left-3 z-50 rounded-full border border-slate-300 bg-white p-2 text-sm shadow-sm lg:bottom-16 dark:border-slate-600 dark:bg-slate-800"
+      class="fixed bottom-32 right-3 z-50 rounded-full border border-slate-300 bg-white p-2 text-sm shadow-sm lg:bottom-16 dark:border-slate-600 dark:bg-slate-800"
       aria-label="Se déconnecter"
       title="Se déconnecter"
     >
