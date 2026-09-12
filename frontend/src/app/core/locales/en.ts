@@ -125,6 +125,8 @@ export const en: Record<string, string> = {
   'admin.filter.allRoles': 'All roles',
   'admin.filter.allStatuses': 'All statuses',
   'admin.filter.noResults': 'No user matches these filters.',
+  'admin.bulk.selected': 'selected',
+  'admin.bulk.clear': 'Clear selection',
   'admin.table.role': 'Role',
   'admin.confirmed.yes': 'Yes',
   'admin.confirmed.no': 'No',

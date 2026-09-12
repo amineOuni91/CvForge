@@ -45,7 +45,10 @@ type PendingAction =
   | { kind: 'role'; user: AdminUser; newRole: 'admin' | 'visitor' }
   | { kind: 'activate'; user: AdminUser }
   | { kind: 'delete'; user: AdminUser }
-  | { kind: 'deleteCv'; user: AdminUser; cv: AdminCvSummary };
+  | { kind: 'deleteCv'; user: AdminUser; cv: AdminCvSummary }
+  | { kind: 'bulkRole'; users: AdminUser[]; newRole: 'admin' | 'visitor' }
+  | { kind: 'bulkActivate'; users: AdminUser[] }
+  | { kind: 'bulkDelete'; users: AdminUser[] };
 
 @Component({
   selector: 'app-admin-users',
@@ -112,10 +115,40 @@ type PendingAction =
         <span class="text-xs text-slate-400 dark:text-slate-500">{{ filteredUsers().length }} / {{ users().length }}</span>
       </div>
 
+      @if (selectedIds().size > 0) {
+        <div class="mx-auto mb-3 flex max-w-5xl flex-wrap items-center gap-3 rounded-lg bg-indigo-50 px-4 py-2 text-sm dark:bg-indigo-900/30">
+          <span class="font-medium text-indigo-800 dark:text-indigo-200">{{ selectedIds().size }} {{ 'admin.bulk.selected' | t }}</span>
+          <label class="flex items-center gap-1 text-xs text-indigo-700 dark:text-indigo-200">
+            {{ 'admin.table.role' | t }}
+            <select
+              [value]="bulkRoleValue()"
+              (change)="onBulkRoleSelect($any($event.target).value)"
+              class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100"
+            >
+              <option value="">—</option>
+              <option value="visitor">{{ 'admin.role.visitor' | t }}</option>
+              <option value="admin">{{ 'admin.role.admin' | t }}</option>
+            </select>
+          </label>
+          <button type="button" (click)="askBulkActivate()" class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:text-slate-200">
+            {{ 'admin.action.activate' | t }}
+          </button>
+          <button type="button" (click)="askBulkDelete()" class="rounded border border-red-300 px-2 py-1 text-sm text-red-600 dark:border-red-800 dark:text-red-400">
+            {{ 'admin.action.delete' | t }}
+          </button>
+          <button type="button" (click)="clearSelection()" class="ml-auto text-xs text-indigo-600 hover:underline dark:text-indigo-300">
+            {{ 'admin.bulk.clear' | t }}
+          </button>
+        </div>
+      }
+
       <div class="mx-auto max-w-5xl overflow-x-auto rounded-lg bg-white shadow-md dark:bg-slate-800">
         <table class="w-full text-left text-sm">
           <thead class="border-b border-slate-200 text-xs font-medium tracking-wide text-slate-400 uppercase dark:border-slate-700 dark:text-slate-500">
             <tr>
+              <th class="w-8 p-3">
+                <input type="checkbox" [checked]="allFilteredSelected()" (change)="toggleAll($any($event.target).checked)" />
+              </th>
               <th class="p-3">{{ 'admin.table.email' | t }}</th>
               <th class="p-3">{{ 'admin.table.confirmed' | t }}</th>
               <th class="p-3">{{ 'admin.table.cvCount' | t }}</th>
@@ -126,11 +159,14 @@ type PendingAction =
           <tbody>
             @if (filteredUsers().length === 0) {
               <tr>
-                <td colspan="5" class="p-6 text-center text-sm text-slate-400 dark:text-slate-500">{{ 'admin.filter.noResults' | t }}</td>
+                <td colspan="6" class="p-6 text-center text-sm text-slate-400 dark:text-slate-500">{{ 'admin.filter.noResults' | t }}</td>
               </tr>
             }
             @for (user of filteredUsers(); track user.id) {
               <tr class="border-b border-slate-100 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700/40">
+                <td class="p-3">
+                  <input type="checkbox" [checked]="selectedIds().has(user.id)" (change)="toggleOne(user.id, $any($event.target).checked)" />
+                </td>
                 <td class="p-3">
                   <div class="flex items-center gap-3">
                     <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
@@ -199,7 +235,7 @@ type PendingAction =
               </tr>
               @if (expandedId() === user.id && expandedDetail(); as detail) {
                 <tr class="border-b border-slate-100 bg-slate-50 dark:border-slate-700 dark:bg-slate-900">
-                  <td colspan="5" class="p-4">
+                  <td colspan="6" class="p-4">
                     <form [formGroup]="detailForm" (ngSubmit)="saveDetail(user)" class="mb-4 grid grid-cols-2 gap-3">
                       <label class="text-sm dark:text-slate-200">{{ 'auth.displayName' | t }}
                         <input formControlName="displayName" class="mt-1 w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100" />
@@ -269,11 +305,11 @@ type PendingAction =
       </div>
 
       @if (pending(); as action) {
-        <app-modal (close)="pending.set(null)">
+        <app-modal (close)="cancelPending()">
           <h2 class="mb-2 text-lg font-semibold text-slate-800 dark:text-slate-100">{{ confirmTitle(action) }}</h2>
           <p class="mb-4 text-sm text-slate-500 dark:text-slate-400">{{ confirmHint(action) }}</p>
           <div class="flex justify-end gap-2">
-            <button type="button" (click)="pending.set(null)" class="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 dark:text-slate-200">
+            <button type="button" (click)="cancelPending()" class="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600 dark:text-slate-200">
               {{ 'admin.action.cancel' | t }}
             </button>
             <button type="button" (click)="confirmPending()" class="rounded bg-slate-800 px-3 py-1.5 text-sm text-white">
@@ -304,6 +340,12 @@ export class AdminUsers implements OnInit {
       return true;
     });
   });
+  readonly selectedIds = signal<Set<string>>(new Set());
+  readonly selectedUsers = computed(() => this.users().filter((u) => this.selectedIds().has(u.id)));
+  readonly allFilteredSelected = computed(
+    () => this.filteredUsers().length > 0 && this.filteredUsers().every((u) => this.selectedIds().has(u.id)),
+  );
+  readonly bulkRoleValue = signal<'' | 'admin' | 'visitor'>('');
   readonly creating = signal(false);
   readonly createError = signal<string | null>(null);
   readonly resettingId = signal<string | null>(null);
@@ -345,6 +387,61 @@ export class AdminUsers implements OnInit {
   private async reload(): Promise<void> {
     const users = await firstValueFrom(this.http.get<AdminUser[]>(`${API_BASE_URL}/api/admin/users`));
     this.users.set(users);
+    const ids = new Set(users.map((u) => u.id));
+    this.selectedIds.update((current) => new Set([...current].filter((id) => ids.has(id))));
+  }
+
+  toggleOne(id: string, checked: boolean): void {
+    this.selectedIds.update((current) => {
+      const next = new Set(current);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  toggleAll(checked: boolean): void {
+    const visibleIds = this.filteredUsers().map((u) => u.id);
+    this.selectedIds.update((current) => {
+      const next = new Set(current);
+      for (const id of visibleIds) {
+        if (checked) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+  }
+
+  clearSelection(): void {
+    this.selectedIds.set(new Set());
+  }
+
+  onBulkRoleSelect(value: string): void {
+    this.bulkRoleValue.set('');
+    if (value === 'admin' || value === 'visitor') this.askBulkRole(value);
+  }
+
+  askBulkRole(newRole: 'admin' | 'visitor'): void {
+    const users = this.selectedUsers();
+    if (users.length === 0) return;
+    this.pending.set({ kind: 'bulkRole', users, newRole });
+  }
+
+  askBulkActivate(): void {
+    const users = this.selectedUsers();
+    if (users.length === 0) return;
+    this.pending.set({ kind: 'bulkActivate', users });
+  }
+
+  askBulkDelete(): void {
+    const users = this.selectedUsers();
+    if (users.length === 0) return;
+    this.pending.set({ kind: 'bulkDelete', users });
+  }
+
+  cancelPending(): void {
+    this.pending.set(null);
+    this.bulkRoleValue.set('');
   }
 
   async createUser(): Promise<void> {
@@ -424,6 +521,12 @@ export class AdminUsers implements OnInit {
         return `Supprimer ${action.user.email} ?`;
       case 'deleteCv':
         return `Supprimer « ${action.cv.name} » ?`;
+      case 'bulkRole':
+        return `Changer le rôle de ${action.users.length} utilisateur(s) ?`;
+      case 'bulkActivate':
+        return `Activer ${action.users.length} compte(s) ?`;
+      case 'bulkDelete':
+        return `Supprimer ${action.users.length} compte(s) ?`;
     }
   }
 
@@ -437,7 +540,19 @@ export class AdminUsers implements OnInit {
         return 'Cette action est définitive : le compte et tous ses CV seront supprimés.';
       case 'deleteCv':
         return 'Cette action est définitive.';
+      case 'bulkRole':
+        return `Nouveau rôle : ${action.newRole === 'admin' ? 'Administrateur' : 'Visiteur'}.`;
+      case 'bulkActivate':
+        return 'Ces comptes seront marqués confirmés sans code ni email.';
+      case 'bulkDelete':
+        return 'Cette action est définitive : ces comptes et tous leurs CV seront supprimés.';
     }
+  }
+
+  private async setRoleFor(user: AdminUser, newRole: 'admin' | 'visitor'): Promise<void> {
+    const detail = await firstValueFrom(this.http.get<AdminUserDetail>(`${API_BASE_URL}/api/admin/users/${user.id}`));
+    const body = { displayName: detail.displayName, personalInfo: detail.profileInfo, email: detail.email, role: newRole };
+    await firstValueFrom(this.http.patch(`${API_BASE_URL}/api/admin/users/${user.id}`, body));
   }
 
   async confirmPending(): Promise<void> {
@@ -447,16 +562,7 @@ export class AdminUsers implements OnInit {
 
     try {
       if (action.kind === 'role') {
-        const detail = await firstValueFrom(
-          this.http.get<AdminUserDetail>(`${API_BASE_URL}/api/admin/users/${action.user.id}`),
-        );
-        const body = {
-          displayName: detail.displayName,
-          personalInfo: detail.profileInfo,
-          email: detail.email,
-          role: action.newRole,
-        };
-        await firstValueFrom(this.http.patch(`${API_BASE_URL}/api/admin/users/${action.user.id}`, body));
+        await this.setRoleFor(action.user, action.newRole);
         await this.reload();
       } else if (action.kind === 'activate') {
         await firstValueFrom(this.http.post(`${API_BASE_URL}/api/admin/users/${action.user.id}/activate`, {}));
@@ -464,12 +570,27 @@ export class AdminUsers implements OnInit {
       } else if (action.kind === 'delete') {
         await firstValueFrom(this.http.delete(`${API_BASE_URL}/api/admin/users/${action.user.id}`));
         await this.reload();
-      } else {
+      } else if (action.kind === 'deleteCv') {
         await firstValueFrom(this.http.delete(`${API_BASE_URL}/api/admin/users/${action.user.id}/cvs/${action.cv.id}`));
         this.userCvs.update((list) => list.filter((c) => c.id !== action.cv.id));
+      } else if (action.kind === 'bulkRole') {
+        await Promise.all(action.users.map((u) => this.setRoleFor(u, action.newRole)));
+        this.clearSelection();
+        await this.reload();
+      } else if (action.kind === 'bulkActivate') {
+        await Promise.all(
+          action.users.map((u) => firstValueFrom(this.http.post(`${API_BASE_URL}/api/admin/users/${u.id}/activate`, {}))),
+        );
+        this.clearSelection();
+        await this.reload();
+      } else {
+        await Promise.all(action.users.map((u) => firstValueFrom(this.http.delete(`${API_BASE_URL}/api/admin/users/${u.id}`))));
+        this.clearSelection();
+        await this.reload();
       }
     } catch {
-      this.actionMessage.set({ userId: action.user.id, text: "Échec de l'action." });
+      const userId = 'user' in action ? action.user.id : action.users[0]?.id;
+      if (userId) this.actionMessage.set({ userId, text: "Échec de l'action." });
     }
   }
 
