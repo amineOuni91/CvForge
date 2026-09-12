@@ -137,6 +137,7 @@ export const en: Record<string, string> = {
   'admin.stats.withoutCv': 'Without CV',
   'admin.stats.totalCvs': 'CVs created',
   'admin.stats.avgCvs': 'CVs / user',
+  'editor.backToAdmin': '← Back to admin',
   'admin.table.role': 'Role',
   'admin.confirmed.yes': 'Yes',
   'admin.confirmed.no': 'No',

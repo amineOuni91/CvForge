@@ -17,7 +17,11 @@ import { TPipe } from '../../core/t.pipe';
     <div class="flex h-screen flex-col">
       <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2 dark:border-slate-700 dark:bg-slate-800">
         <div class="flex items-center gap-3">
-          <a routerLink="/dashboard" class="text-sm text-slate-500 hover:underline dark:text-slate-400">← CvForge</a>
+          @if (store.adminUserId()) {
+            <a routerLink="/admin" class="text-sm text-slate-500 hover:underline dark:text-slate-400">{{ 'editor.backToAdmin' | t }}</a>
+          } @else {
+            <a routerLink="/dashboard" class="text-sm text-slate-500 hover:underline dark:text-slate-400">← CvForge</a>
+          }
           <span class="font-medium text-slate-800 dark:text-slate-100">{{ store.name() }}</span>
         </div>
         <div class="flex items-center gap-3">
