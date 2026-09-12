@@ -21,7 +21,20 @@ builder.Services.AddAuthorization();
 builder.Services
     .AddIdentityApiEndpoints<AppUser>()
     .AddEntityFrameworkStores<AppDbContext>();
-builder.Services.AddSingleton<IEmailSender<AppUser>, LoggingEmailSender>();
+var gmailUser = builder.Configuration["Smtp:User"];
+var gmailAppPassword = builder.Configuration["Smtp:AppPassword"];
+if (!string.IsNullOrWhiteSpace(gmailUser) && !string.IsNullOrWhiteSpace(gmailAppPassword))
+{
+    builder.Services.AddSingleton(new SmtpEmailSender(gmailUser, gmailAppPassword));
+    builder.Services.AddSingleton<IEmailSender<AppUser>>(sp => sp.GetRequiredService<SmtpEmailSender>());
+    builder.Services.AddSingleton<IEmailChangeSender>(sp => sp.GetRequiredService<SmtpEmailSender>());
+}
+else
+{
+    builder.Services.AddSingleton<LoggingEmailSender>();
+    builder.Services.AddSingleton<IEmailSender<AppUser>>(sp => sp.GetRequiredService<LoggingEmailSender>());
+    builder.Services.AddSingleton<IEmailChangeSender>(sp => sp.GetRequiredService<LoggingEmailSender>());
+}
 builder.Services.AddScoped<IValidator<CvDocument>, CvDocumentValidator>();
 builder.Services.AddSingleton<PdfService>();
 builder.Services.AddSingleton<AiService>();

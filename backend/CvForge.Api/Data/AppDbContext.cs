@@ -35,5 +35,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
                 document.OwnsMany(d => d.Certifications);
             });
         });
+
+        builder.Entity<AppUser>().OwnsOne(u => u.ProfileInfo, info => info.ToJson());
     }
 }

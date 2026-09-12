@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Identity;
 namespace CvForge.Api.Services;
 
 /// <summary>Dev-only: no SMTP configured, so auth links are written to the log instead of emailed.</summary>
-public class LoggingEmailSender(ILogger<LoggingEmailSender> logger) : IEmailSender<AppUser>
+public class LoggingEmailSender(ILogger<LoggingEmailSender> logger) : IEmailSender<AppUser>, IEmailChangeSender
 {
     public Task SendConfirmationLinkAsync(AppUser user, string email, string confirmationLink)
     {
@@ -21,6 +21,12 @@ public class LoggingEmailSender(ILogger<LoggingEmailSender> logger) : IEmailSend
     public Task SendPasswordResetCodeAsync(AppUser user, string email, string resetCode)
     {
         logger.LogInformation("[DEV EMAIL] Password reset code for {Email}: {Code}", email, resetCode);
+        return Task.CompletedTask;
+    }
+
+    public Task SendEmailChangeCodeAsync(AppUser user, string newEmail, string code)
+    {
+        logger.LogInformation("[DEV EMAIL] Email change code for {Email}: {Code}", newEmail, code);
         return Task.CompletedTask;
     }
 }

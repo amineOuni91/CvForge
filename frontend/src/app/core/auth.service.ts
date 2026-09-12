@@ -2,11 +2,13 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL } from './api-config';
+import { PersonalInfo } from '../models/cv-document';
 
 export interface AuthUser {
   id: string;
   email: string;
   displayName: string;
+  profileInfo: PersonalInfo;
 }
 
 interface AccessTokenResponse {
@@ -80,9 +82,34 @@ export class AuthService {
     );
   }
 
-  async updateDisplayName(displayName: string): Promise<void> {
+  async resendConfirmationEmail(email: string): Promise<void> {
+    await firstValueFrom(this.http.post(`${API_BASE_URL}/api/auth/resendConfirmationEmail`, { email }));
+  }
+
+  async confirmEmailCode(email: string, code: string): Promise<void> {
+    await firstValueFrom(this.http.post(`${API_BASE_URL}/api/auth/confirm-email-code`, { email, code }));
+  }
+
+  async updateProfile(displayName: string, personalInfo: PersonalInfo): Promise<void> {
     const user = await firstValueFrom(
-      this.http.patch<AuthUser>(`${API_BASE_URL}/api/auth/me`, { displayName }),
+      this.http.patch<AuthUser>(`${API_BASE_URL}/api/auth/me`, { displayName, personalInfo }),
+    );
+    this.currentUser.set(user);
+  }
+
+  async changePassword(oldPassword: string, newPassword: string): Promise<void> {
+    await firstValueFrom(
+      this.http.post(`${API_BASE_URL}/api/auth/manage/info`, { oldPassword, newPassword }),
+    );
+  }
+
+  async requestEmailChange(newEmail: string): Promise<void> {
+    await firstValueFrom(this.http.post(`${API_BASE_URL}/api/auth/email-change/request`, { newEmail }));
+  }
+
+  async confirmEmailChange(newEmail: string, code: string): Promise<void> {
+    const user = await firstValueFrom(
+      this.http.post<AuthUser>(`${API_BASE_URL}/api/auth/email-change/confirm`, { newEmail, code }),
     );
     this.currentUser.set(user);
   }

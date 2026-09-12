@@ -4,11 +4,17 @@ import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL } from '../../core/api-config';
 import { CvStore } from '../cv-store';
 import { PersonalInfo } from '../../models/cv-document';
+import { AuthService } from '../../core/auth.service';
 
 @Component({
   selector: 'app-personal-info-section',
   template: `
     @if (info(); as info) {
+      <div class="mb-3">
+        <button type="button" class="text-sm text-indigo-600 hover:underline dark:text-indigo-400" (click)="fillFromProfile()">
+          Remplir depuis mon profil
+        </button>
+      </div>
       <div class="mb-3 flex items-center gap-3">
         @if (info.photoUrl) {
           <img [src]="info.photoUrl" alt="" class="h-16 w-16 rounded-full object-cover" />
@@ -79,6 +85,7 @@ import { PersonalInfo } from '../../models/cv-document';
 export class PersonalInfoSection {
   private readonly store = inject(CvStore);
   private readonly http = inject(HttpClient);
+  private readonly auth = inject(AuthService);
   readonly info = computed(() => this.store.document()?.personalInfo);
   readonly uploading = signal(false);
   readonly photoError = signal<string | null>(null);
@@ -89,6 +96,13 @@ export class PersonalInfoSection {
 
   patch(changes: Partial<PersonalInfo>): void {
     this.store.update((doc) => ({ ...doc, personalInfo: { ...doc.personalInfo, ...changes } }));
+  }
+
+  fillFromProfile(): void {
+    const profileInfo = this.auth.currentUser()?.profileInfo;
+    if (!profileInfo) return;
+    const { photoUrl: _photoUrl, ...fields } = profileInfo;
+    this.patch(fields);
   }
 
   async uploadPhoto(event: Event): Promise<void> {

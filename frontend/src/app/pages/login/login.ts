@@ -54,6 +54,11 @@ import { AuthService } from '../../core/auth.service';
             'auth.login.register' | t
           }}</a>
         </div>
+        <div class="mt-2 text-center text-sm">
+          <a routerLink="/confirm-email" class="text-slate-600 hover:underline dark:text-slate-300">{{
+            'auth.login.confirmEmail' | t
+          }}</a>
+        </div>
       </form>
     </main>
   `,
