@@ -173,9 +173,65 @@ public class AdminTests(DatabaseFixture fixture)
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task AdminCanListLoadSaveAndDeleteAnotherUsersCv()
+    {
+        var (adminClient, _, _) = await TestUser.CreateAuthenticatedAdminClientWithEmailAsync(fixture.Factory);
+        var (ownerClient, ownerEmail) = await TestUser.CreateAuthenticatedClientWithEmailAsync(fixture.Factory);
+        var ownerId = (await adminClient.GetFromJsonAsync<List<AdminUserDto>>("/api/admin/users"))!
+            .Single(u => u.Email == ownerEmail).Id;
+
+        var createResponse = await ownerClient.PostAsJsonAsync("/api/cvs", new { });
+        var cvId = (await createResponse.Content.ReadFromJsonAsync<CvSummaryDto>())!.Id;
+
+        var listResponse = await adminClient.GetFromJsonAsync<List<CvSummaryDto>>($"/api/admin/users/{ownerId}/cvs");
+        Assert.Contains(listResponse!, c => c.Id == cvId);
+
+        var loaded = await adminClient.GetFromJsonAsync<CvDto>($"/api/admin/users/{ownerId}/cvs/{cvId}");
+        Assert.NotNull(loaded);
+
+        loaded!.Document.Summary = "Edited by admin";
+        var saveResponse = await adminClient.PutAsJsonAsync($"/api/admin/users/{ownerId}/cvs/{cvId}", loaded.Document);
+        Assert.Equal(System.Net.HttpStatusCode.OK, saveResponse.StatusCode);
+
+        var reloaded = await ownerClient.GetFromJsonAsync<CvDto>($"/api/cvs/{cvId}");
+        Assert.Equal("Edited by admin", reloaded!.Document.Summary);
+
+        var deleteResponse = await adminClient.DeleteAsync($"/api/admin/users/{ownerId}/cvs/{cvId}");
+        Assert.Equal(System.Net.HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        var getAfterDelete = await ownerClient.GetAsync($"/api/cvs/{cvId}");
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, getAfterDelete.StatusCode);
+    }
+
+    [Fact]
+    public async Task AdminCvRoute_404sWhenTheCvBelongsToADifferentUser()
+    {
+        var (adminClient, _, _) = await TestUser.CreateAuthenticatedAdminClientWithEmailAsync(fixture.Factory);
+        var (ownerClient, _) = await TestUser.CreateAuthenticatedClientWithEmailAsync(fixture.Factory);
+        var (_, otherEmail) = await TestUser.CreateAuthenticatedClientWithEmailAsync(fixture.Factory);
+        var otherId = (await adminClient.GetFromJsonAsync<List<AdminUserDto>>("/api/admin/users"))!
+            .Single(u => u.Email == otherEmail).Id;
+
+        var createResponse = await ownerClient.PostAsJsonAsync("/api/cvs", new { });
+        var cvId = (await createResponse.Content.ReadFromJsonAsync<CvSummaryDto>())!.Id;
+
+        // cvId belongs to `ownerClient`'s user, not to `otherId` — the pair must not match
+        var response = await adminClient.GetAsync($"/api/admin/users/{otherId}/cvs/{cvId}");
+
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     private record MeDto(string Id, string Email, string DisplayName, bool EmailConfirmed, string Role);
     private record AdminUserDto(string Id, string Email, string DisplayName, bool EmailConfirmed, string Role);
     private record AdminUserDetailDto(string Id, string Email, string DisplayName, PersonalInfoDto ProfileInfo, bool EmailConfirmed, string Role);
     private record PersonalInfoDto(string FirstName, string LastName, string JobTitle, string Email, string Phone, string City, string Country, string LinkedIn, string GitHub, string Portfolio, string Website);
     private record AccessTokenResponseDto(string TokenType, string AccessToken, int ExpiresIn, string RefreshToken);
+    private record CvSummaryDto(Guid Id, string Name, DateTime CreatedAt, DateTime UpdatedAt);
+    private record CvDto(Guid Id, string Name, DateTime CreatedAt, DateTime UpdatedAt, CvDocumentDto Document);
+    private class CvDocumentDto
+    {
+        public string TemplateKey { get; set; } = "";
+        public string Summary { get; set; } = "";
+    }
 }

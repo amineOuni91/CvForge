@@ -1,6 +1,9 @@
 using System.Security.Claims;
+using CvForge.Api.Data;
 using CvForge.Api.Domain;
+using FluentValidation;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace CvForge.Api.Endpoints;
 
@@ -99,6 +102,54 @@ public static class AdminEndpoints
 
             var result = await userManager.DeleteAsync(user);
             return result.Succeeded ? Results.Ok() : Results.BadRequest(new { error = "Échec de la suppression du compte." });
+        });
+
+        group.MapGet("/users/{id}/cvs", async (string id, AppDbContext db, UserManager<AppUser> userManager) =>
+        {
+            var user = await userManager.FindByIdAsync(id);
+            if (user is null) return Results.NotFound();
+
+            var cvs = await db.Cvs
+                .Where(c => c.UserId == id)
+                .OrderByDescending(c => c.UpdatedAt)
+                .Select(c => new CvSummaryDto(c.Id, c.Name, c.CreatedAt, c.UpdatedAt))
+                .ToListAsync();
+            return Results.Ok(cvs);
+        });
+
+        group.MapGet("/users/{id}/cvs/{cvId:guid}", async (string id, Guid cvId, AppDbContext db) =>
+        {
+            var cv = await db.LoadOwnedCvAsync(id, cvId);
+            return cv is null ? Results.NotFound() : Results.Ok(cv);
+        });
+
+        group.MapPut("/users/{id}/cvs/{cvId:guid}", async (
+            string id,
+            Guid cvId,
+            CvDocument document,
+            AppDbContext db,
+            IValidator<CvDocument> validator) =>
+        {
+            var validation = await validator.ValidateAsync(document);
+            if (!validation.IsValid) return Results.ValidationProblem(validation.ToDictionary());
+
+            var cv = await db.LoadOwnedCvAsync(id, cvId);
+            if (cv is null) return Results.NotFound();
+
+            cv.Document = document;
+            cv.UpdatedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+            return Results.Ok(cv);
+        });
+
+        group.MapDelete("/users/{id}/cvs/{cvId:guid}", async (string id, Guid cvId, AppDbContext db) =>
+        {
+            var cv = await db.LoadOwnedCvAsync(id, cvId);
+            if (cv is null) return Results.NotFound();
+
+            db.Cvs.Remove(cv);
+            await db.SaveChangesAsync();
+            return Results.NoContent();
         });
     }
 
