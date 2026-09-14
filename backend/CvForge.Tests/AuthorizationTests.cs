@@ -195,6 +195,48 @@ public class AuthorizationTests(DatabaseFixture fixture)
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    [Fact]
+    public async Task RenameLetterName_OwnedByAnotherUser_Returns404()
+    {
+        var owner = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var stranger = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+
+        var create = await owner.PostAsJsonAsync("/api/letters", new { });
+        var letter = await create.Content.ReadFromJsonAsync<LetterSummaryDto>();
+
+        var response = await stranger.PatchAsJsonAsync($"/api/letters/{letter!.Id}/name", new { name = "Hijacked" });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DuplicateLetter_OwnedByAnotherUser_Returns404()
+    {
+        var owner = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var stranger = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+
+        var create = await owner.PostAsJsonAsync("/api/letters", new { });
+        var letter = await create.Content.ReadFromJsonAsync<LetterSummaryDto>();
+
+        var response = await stranger.PostAsync($"/api/letters/{letter!.Id}/duplicate", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetLetterThumbnail_OwnedByAnotherUser_Returns404()
+    {
+        var owner = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var stranger = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+
+        var create = await owner.PostAsJsonAsync("/api/letters", new { });
+        var letter = await create.Content.ReadFromJsonAsync<LetterSummaryDto>();
+
+        var response = await stranger.GetAsync($"/api/letters/{letter!.Id}/thumbnail");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     private record CvSummaryDto(Guid Id, string Name, DateTime CreatedAt, DateTime UpdatedAt);
     private record CvDto(Guid Id, string Name, object Document, DateTime CreatedAt, DateTime UpdatedAt);
     private record LetterSummaryDto(Guid Id, string Name, DateTime CreatedAt, DateTime UpdatedAt);

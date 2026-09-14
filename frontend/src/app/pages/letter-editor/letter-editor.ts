@@ -11,19 +11,20 @@ import { LetterTemplateHostComponent } from '../../templates/letters/letter-temp
 import { ToastService } from '../../core/toast.service';
 import { AuthService } from '../../core/auth.service';
 import { Skeleton } from '../../ui/skeleton';
+import { TPipe } from '../../core/t.pipe';
 
 @Component({
   selector: 'app-letter-editor',
   imports: [
     LetterSenderSection, LetterRecipientSection, LetterContextSection, LetterBodySection,
-    LetterCustomizationPanel, PreviewPane, LetterTemplateHostComponent, RouterLink, Skeleton,
+    LetterCustomizationPanel, PreviewPane, LetterTemplateHostComponent, RouterLink, Skeleton, TPipe,
   ],
   template: `
     <div class="flex h-screen flex-col">
       <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2 dark:border-slate-700 dark:bg-slate-800">
         <div class="flex items-center gap-3">
           @if (store.adminUserId(); as adminUserId) {
-            <a routerLink="/admin" [queryParams]="{ expand: adminUserId }" class="text-sm text-slate-500 hover:underline dark:text-slate-400">← Retour à l'administration</a>
+            <a routerLink="/admin" [queryParams]="{ expand: adminUserId }" class="text-sm text-slate-500 hover:underline dark:text-slate-400">{{ 'editor.backToAdmin' | t }}</a>
           } @else {
             <a routerLink="/dashboard" class="text-sm text-slate-500 hover:underline dark:text-slate-400">← CvForge</a>
           }

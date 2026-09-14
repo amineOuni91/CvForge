@@ -1,9 +1,10 @@
-@page {
+@page letter {
   size: A4;
   margin: 20mm;
 }
 
 .letter-page {
+  page: letter;
   width: 210mm;
   min-height: 297mm;
   padding: 20mm;

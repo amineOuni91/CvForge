@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL } from '../../core/api-config';
 import { Modal } from '../../ui/modal';
+import { TPipe } from '../../core/t.pipe';
 
 export interface AdminLetterSummary {
   id: string;
@@ -15,11 +16,11 @@ export interface AdminLetterSummary {
 
 @Component({
   selector: 'app-admin-user-letters-panel',
-  imports: [DatePipe, RouterLink, Modal],
+  imports: [DatePipe, RouterLink, Modal, TPipe],
   template: `
-    <h3 class="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">Lettres de motivation</h3>
+    <h3 class="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">{{ 'admin.letters.title' | t }}</h3>
     @if (letters().length === 0) {
-      <p class="text-sm text-slate-400 dark:text-slate-500">Aucune lettre.</p>
+      <p class="text-sm text-slate-400 dark:text-slate-500">{{ 'admin.letters.empty' | t }}</p>
     } @else {
       <ul class="divide-y divide-slate-100 dark:divide-slate-700">
         @for (letter of letters(); track letter.id) {
@@ -42,7 +43,7 @@ export interface AdminLetterSummary {
               <button type="button" (click)="duplicate(letter)" title="Dupliquer" class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100">⧉</button>
               <button type="button" (click)="download(letter)" [disabled]="downloadingId() === letter.id" title="Exporter en PDF"
                       class="rounded-full p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-40 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100">⤓</button>
-              <button type="button" (click)="askDelete(letter)" title="Supprimer" class="rounded-full p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300">🗑️</button>
+              <button type="button" (click)="askDelete(letter)" [title]="'admin.action.delete' | t" [attr.aria-label]="'admin.action.delete' | t" class="rounded-full p-1.5 text-red-500 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300">🗑️</button>
             </div>
           </li>
         }

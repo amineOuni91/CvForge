@@ -1,9 +1,10 @@
-@page {
+@page cv {
   size: A4;
   margin: 12mm;
 }
 
 .cv-page {
+  page: cv;
   width: 210mm;
   min-height: 297mm;
   padding: 12mm;

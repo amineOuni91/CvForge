@@ -29,12 +29,12 @@ import { LettersTab } from './letters-tab.component';
         <button type="button" (click)="tab.set('cvs')" class="rounded px-3 py-1.5 text-sm font-medium"
                 [class.bg-slate-800]="tab() === 'cvs'" [class.text-white]="tab() === 'cvs'"
                 [class.text-slate-600]="tab() !== 'cvs'" [class.dark:text-slate-300]="tab() !== 'cvs'">
-          CV
+          {{ 'dashboard.tabCvs' | t }}
         </button>
         <button type="button" (click)="tab.set('letters')" class="rounded px-3 py-1.5 text-sm font-medium"
                 [class.bg-slate-800]="tab() === 'letters'" [class.text-white]="tab() === 'letters'"
                 [class.text-slate-600]="tab() !== 'letters'" [class.dark:text-slate-300]="tab() !== 'letters'">
-          Lettres
+          {{ 'dashboard.tabLetters' | t }}
         </button>
       </div>
 

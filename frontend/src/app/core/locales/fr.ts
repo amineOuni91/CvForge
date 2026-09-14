@@ -84,6 +84,8 @@ export const fr: Record<string, string> = {
   'nav.dashboard': 'Tableau de bord',
   'dashboard.title': 'Mes CV',
   'dashboard.empty': 'Aucun CV pour le moment.',
+  'dashboard.tabCvs': 'CV',
+  'dashboard.tabLetters': 'Lettres',
   'landing.hero.title': 'Créez un CV professionnel en quelques minutes',
   'landing.hero.subtitle': 'Éditez votre CV et voyez le résultat se mettre à jour en temps réel, choisissez parmi 5 templates, exportez un PDF fidèle au pixel près.',
   'landing.hero.cta.start': 'Commencer gratuitement',
@@ -155,4 +157,6 @@ export const fr: Record<string, string> = {
   'admin.action.delete': 'Supprimer',
   'admin.action.viewEdit': 'Voir / Éditer',
   'admin.cvs.title': 'CV',
+  'admin.letters.title': 'Lettres de motivation',
+  'admin.letters.empty': 'Aucune lettre.',
 };

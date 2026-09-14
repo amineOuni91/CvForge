@@ -84,6 +84,8 @@ export const en: Record<string, string> = {
   'nav.dashboard': 'Dashboard',
   'dashboard.title': 'My CVs',
   'dashboard.empty': 'No CVs yet.',
+  'dashboard.tabCvs': 'CVs',
+  'dashboard.tabLetters': 'Letters',
   'landing.hero.title': 'Build a professional CV in minutes',
   'landing.hero.subtitle': 'Edit your CV and watch it update in real time, choose from 5 templates, export a pixel-perfect PDF.',
   'landing.hero.cta.start': 'Start for free',
@@ -155,4 +157,6 @@ export const en: Record<string, string> = {
   'admin.action.delete': 'Delete',
   'admin.action.viewEdit': 'View / Edit',
   'admin.cvs.title': 'CVs',
+  'admin.letters.title': 'Cover letters',
+  'admin.letters.empty': 'No letters.',
 };

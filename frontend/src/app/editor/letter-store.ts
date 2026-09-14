@@ -60,7 +60,7 @@ export class LetterStore {
     try {
       await this.saveNow();
       const blob = await firstValueFrom(
-        this.http.get(`${API_BASE_URL}/api/letters/${id}/export/${format}`, { responseType: 'blob' }),
+        this.http.get(`${this.baseUrl()}/${id}/export/${format}`, { responseType: 'blob' }),
       );
       const url = URL.createObjectURL(blob);
       const link = window.document.createElement('a');
