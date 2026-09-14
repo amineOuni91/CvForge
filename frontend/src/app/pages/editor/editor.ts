@@ -9,10 +9,11 @@ import { ToastService } from '../../core/toast.service';
 import { AuthService } from '../../core/auth.service';
 import { Skeleton } from '../../ui/skeleton';
 import { TPipe } from '../../core/t.pipe';
+import { TemplateHostComponent } from '../../templates/template-host.component';
 
 @Component({
   selector: 'app-editor',
-  imports: [SectionList, PreviewPane, CustomizationPanel, AtsPanel, RouterLink, Skeleton, TPipe],
+  imports: [SectionList, PreviewPane, CustomizationPanel, AtsPanel, RouterLink, Skeleton, TPipe, TemplateHostComponent],
   template: `
     <div class="flex h-screen flex-col">
       <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2 dark:border-slate-700 dark:bg-slate-800">
@@ -94,7 +95,11 @@ import { TPipe } from '../../core/t.pipe';
             }
           </div>
           <div [class]="previewPanelClass()">
-            <app-preview-pane [document]="store.document()" />
+            <app-preview-pane [document]="store.document()">
+              @if (store.document(); as doc) {
+                <app-template-host [document]="doc" />
+              }
+            </app-preview-pane>
           </div>
         </div>
 

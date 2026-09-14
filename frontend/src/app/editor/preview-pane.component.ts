@@ -1,6 +1,4 @@
 import { Component, ElementRef, afterRenderEffect, computed, effect, input, signal, viewChild } from '@angular/core';
-import { CvDocument } from '../models/cv-document';
-import { TemplateHostComponent } from '../templates/template-host.component';
 
 const A4_PAGE_MARKER =
   'repeating-linear-gradient(to bottom, transparent 0, transparent calc(297mm - 1px), #94a3b8 calc(297mm - 1px), #94a3b8 297mm)';
@@ -11,7 +9,6 @@ const A4_HEIGHT_MM = 297;
 
 @Component({
   selector: 'app-preview-pane',
-  imports: [TemplateHostComponent],
   template: `
     <div class="flex h-full flex-col">
       <div class="flex items-center justify-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-sm dark:border-slate-700 dark:bg-slate-800">
@@ -31,14 +28,14 @@ const A4_HEIGHT_MM = 297;
         [class.z-50]="fullscreen()"
         (scroll)="scrollTopPx.set(scrollContainer.scrollTop)"
       >
-        @if (document(); as doc) {
+        @if (document()) {
           <div
             class="relative mx-auto shadow-lg"
             style="width: 210mm; transform-origin: top center"
             [style.transform]="'scale(' + zoom() + ')'"
           >
             <div #pageAnchor>
-              <app-template-host [document]="doc" />
+              <ng-content />
             </div>
             <div class="pointer-events-none absolute inset-0" [style.background-image]="pageMarker"></div>
           </div>
@@ -48,7 +45,7 @@ const A4_HEIGHT_MM = 297;
   `,
 })
 export class PreviewPane {
-  readonly document = input.required<CvDocument | null>();
+  readonly document = input.required<unknown>();
 
   readonly zoom = signal(1);
   readonly fullscreen = signal(false);
