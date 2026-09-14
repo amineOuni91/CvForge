@@ -280,6 +280,82 @@ public class AdminTests(DatabaseFixture fixture)
         Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task AdminCanListLoadSaveAndDeleteAnotherUsersLetter()
+    {
+        var (adminClient, _, _) = await TestUser.CreateAuthenticatedAdminClientWithEmailAsync(fixture.Factory);
+        var (ownerClient, ownerEmail) = await TestUser.CreateAuthenticatedClientWithEmailAsync(fixture.Factory);
+        var ownerId = (await adminClient.GetFromJsonAsync<List<AdminUserDto>>("/api/admin/users"))!
+            .Single(u => u.Email == ownerEmail).Id;
+
+        var createResponse = await ownerClient.PostAsJsonAsync("/api/letters", new { });
+        var letterId = (await createResponse.Content.ReadFromJsonAsync<LetterSummaryDto>())!.Id;
+
+        var listResponse = await adminClient.GetFromJsonAsync<List<LetterSummaryDto>>($"/api/admin/users/{ownerId}/letters");
+        Assert.Contains(listResponse!, l => l.Id == letterId);
+
+        var loaded = await adminClient.GetFromJsonAsync<LetterDto>($"/api/admin/users/{ownerId}/letters/{letterId}");
+        Assert.NotNull(loaded);
+
+        loaded!.Document.Subject = "Edited by admin";
+        var saveResponse = await adminClient.PutAsJsonAsync($"/api/admin/users/{ownerId}/letters/{letterId}", loaded.Document);
+        Assert.Equal(System.Net.HttpStatusCode.OK, saveResponse.StatusCode);
+
+        var reloaded = await ownerClient.GetFromJsonAsync<LetterDto>($"/api/letters/{letterId}");
+        Assert.Equal("Edited by admin", reloaded!.Document.Subject);
+
+        var deleteResponse = await adminClient.DeleteAsync($"/api/admin/users/{ownerId}/letters/{letterId}");
+        Assert.Equal(System.Net.HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        var getAfterDelete = await ownerClient.GetAsync($"/api/letters/{letterId}");
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, getAfterDelete.StatusCode);
+    }
+
+    [Fact]
+    public async Task AdminCanRenameDuplicateAndExportAnotherUsersLetter()
+    {
+        var (adminClient, _, _) = await TestUser.CreateAuthenticatedAdminClientWithEmailAsync(fixture.Factory);
+        var (ownerClient, ownerEmail) = await TestUser.CreateAuthenticatedClientWithEmailAsync(fixture.Factory);
+        var ownerId = (await adminClient.GetFromJsonAsync<List<AdminUserDto>>("/api/admin/users"))!
+            .Single(u => u.Email == ownerEmail).Id;
+        var createResponse = await ownerClient.PostAsJsonAsync("/api/letters", new { });
+        var letterId = (await createResponse.Content.ReadFromJsonAsync<LetterSummaryDto>())!.Id;
+
+        var renameResponse = await adminClient.PatchAsJsonAsync($"/api/admin/users/{ownerId}/letters/{letterId}/name", new { name = "Renamed by admin" });
+        Assert.Equal(System.Net.HttpStatusCode.OK, renameResponse.StatusCode);
+        var renamed = await renameResponse.Content.ReadFromJsonAsync<LetterSummaryDto>();
+        Assert.Equal("Renamed by admin", renamed!.Name);
+
+        var duplicateResponse = await adminClient.PostAsync($"/api/admin/users/{ownerId}/letters/{letterId}/duplicate", null);
+        Assert.Equal(System.Net.HttpStatusCode.Created, duplicateResponse.StatusCode);
+        var duplicated = await duplicateResponse.Content.ReadFromJsonAsync<LetterSummaryDto>();
+        Assert.Equal("Renamed by admin (copie)", duplicated!.Name);
+
+        var ownerLetters = await ownerClient.GetFromJsonAsync<List<LetterSummaryDto>>("/api/letters");
+        Assert.Contains(ownerLetters!, l => l.Id == duplicated.Id);
+
+        var exportResponse = await adminClient.GetAsync($"/api/admin/users/{ownerId}/letters/{letterId}/export/json");
+        Assert.Equal(System.Net.HttpStatusCode.OK, exportResponse.StatusCode);
+        Assert.StartsWith("application/json", exportResponse.Content.Headers.ContentType!.ToString());
+    }
+
+    [Fact]
+    public async Task AdminLetterRoute_404sWhenTheLetterBelongsToADifferentUser()
+    {
+        var (adminClient, _, _) = await TestUser.CreateAuthenticatedAdminClientWithEmailAsync(fixture.Factory);
+        var (ownerClient, _) = await TestUser.CreateAuthenticatedClientWithEmailAsync(fixture.Factory);
+        var (_, otherEmail) = await TestUser.CreateAuthenticatedClientWithEmailAsync(fixture.Factory);
+        var otherId = (await adminClient.GetFromJsonAsync<List<AdminUserDto>>("/api/admin/users"))!
+            .Single(u => u.Email == otherEmail).Id;
+
+        var createResponse = await ownerClient.PostAsJsonAsync("/api/letters", new { });
+        var letterId = (await createResponse.Content.ReadFromJsonAsync<LetterSummaryDto>())!.Id;
+
+        var response = await adminClient.GetAsync($"/api/admin/users/{otherId}/letters/{letterId}");
+
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     private record MeDto(string Id, string Email, string DisplayName, bool EmailConfirmed, string Role);
     private record AdminUserDto(string Id, string Email, string DisplayName, bool EmailConfirmed, string Role, int CvCount);
     private record AdminUserDetailDto(string Id, string Email, string DisplayName, PersonalInfoDto ProfileInfo, bool EmailConfirmed, string Role);
@@ -291,5 +367,12 @@ public class AdminTests(DatabaseFixture fixture)
     {
         public string TemplateKey { get; set; } = "";
         public string Summary { get; set; } = "";
+    }
+    private record LetterSummaryDto(Guid Id, string Name, DateTime CreatedAt, DateTime UpdatedAt);
+    private record LetterDto(Guid Id, string Name, DateTime CreatedAt, DateTime UpdatedAt, LetterDocumentDto Document);
+    private class LetterDocumentDto
+    {
+        public string TemplateKey { get; set; } = "";
+        public string Subject { get; set; } = "";
     }
 }

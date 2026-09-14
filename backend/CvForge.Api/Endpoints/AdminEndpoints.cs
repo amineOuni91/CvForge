@@ -4,6 +4,7 @@ using CvForge.Api.Data;
 using CvForge.Api.Domain;
 using CvForge.Api.Services;
 using CvForge.Api.Services.DocxExport;
+using CvForge.Api.Services.LetterExport;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -208,6 +209,96 @@ public static class AdminEndpoints
             if (cv is null) return Results.NotFound();
 
             db.Cvs.Remove(cv);
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        });
+
+        group.MapGet("/users/{id}/letters", async (string id, AppDbContext db, UserManager<AppUser> userManager) =>
+        {
+            var user = await userManager.FindByIdAsync(id);
+            if (user is null) return Results.NotFound();
+
+            var letters = await db.CoverLetters
+                .Where(l => l.UserId == id)
+                .OrderByDescending(l => l.UpdatedAt)
+                .Select(l => new LetterSummaryDto(l.Id, l.Name, l.CreatedAt, l.UpdatedAt))
+                .ToListAsync();
+            return Results.Ok(letters);
+        });
+
+        group.MapGet("/users/{id}/letters/{letterId:guid}", async (string id, Guid letterId, AppDbContext db) =>
+        {
+            var letter = await db.LoadOwnedLetterAsync(id, letterId);
+            return letter is null ? Results.NotFound() : Results.Ok(letter);
+        });
+
+        group.MapPatch("/users/{id}/letters/{letterId:guid}/name", async (string id, Guid letterId, RenameLetterRequest request, AppDbContext db) =>
+        {
+            var letter = await db.LoadOwnedLetterAsync(id, letterId);
+            if (letter is null) return Results.NotFound();
+
+            letter.Name = request.Name;
+            letter.UpdatedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+            return Results.Ok(new LetterSummaryDto(letter.Id, letter.Name, letter.CreatedAt, letter.UpdatedAt));
+        });
+
+        group.MapPost("/users/{id}/letters/{letterId:guid}/duplicate", async (string id, Guid letterId, AppDbContext db) =>
+        {
+            var source = await db.LoadOwnedLetterAsync(id, letterId);
+            if (source is null) return Results.NotFound();
+
+            var copy = new CoverLetter
+            {
+                UserId = id,
+                Name = $"{source.Name} (copie)",
+                Document = JsonSerializer.Deserialize<LetterDocument>(JsonSerializer.Serialize(source.Document))!,
+            };
+            db.CoverLetters.Add(copy);
+            await db.SaveChangesAsync();
+            return Results.Created($"/api/admin/users/{id}/letters/{copy.Id}", new LetterSummaryDto(copy.Id, copy.Name, copy.CreatedAt, copy.UpdatedAt));
+        });
+
+        group.MapGet("/users/{id}/letters/{letterId:guid}/export/{format}", async (
+            string id,
+            Guid letterId,
+            string format,
+            AppDbContext db,
+            PdfService pdfService,
+            LetterDocxService letterDocxService,
+            LetterTxtExportService letterTxtExportService) =>
+        {
+            var letter = await db.LoadOwnedLetterAsync(id, letterId);
+            if (letter is null) return Results.NotFound();
+
+            return await LetterExportEndpoints.RenderLetterExportAsync(letter, format, pdfService, letterDocxService, letterTxtExportService);
+        });
+
+        group.MapPut("/users/{id}/letters/{letterId:guid}", async (
+            string id,
+            Guid letterId,
+            LetterDocument document,
+            AppDbContext db,
+            IValidator<LetterDocument> validator) =>
+        {
+            var validation = await validator.ValidateAsync(document);
+            if (!validation.IsValid) return Results.ValidationProblem(validation.ToDictionary());
+
+            var letter = await db.LoadOwnedLetterAsync(id, letterId);
+            if (letter is null) return Results.NotFound();
+
+            letter.Document = document;
+            letter.UpdatedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+            return Results.Ok(letter);
+        });
+
+        group.MapDelete("/users/{id}/letters/{letterId:guid}", async (string id, Guid letterId, AppDbContext db) =>
+        {
+            var letter = await db.LoadOwnedLetterAsync(id, letterId);
+            if (letter is null) return Results.NotFound();
+
+            db.CoverLetters.Remove(letter);
             await db.SaveChangesAsync();
             return Results.NoContent();
         });
