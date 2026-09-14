@@ -50,4 +50,10 @@ export const routes: Routes = [
     path: 'print/:id',
     loadComponent: () => import('./pages/print/print').then((m) => m.Print),
   },
+  {
+    // no authGuard: rendered by the backend's headless Chromium with data injected via
+    // window.__letter, no auth token to attach in that context (see PdfService)
+    path: 'print/letter/:id',
+    loadComponent: () => import('./pages/print-letter/print-letter').then((m) => m.PrintLetter),
+  },
 ];
