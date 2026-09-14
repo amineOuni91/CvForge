@@ -35,6 +35,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/editor/editor').then((m) => m.Editor),
   },
   {
+    path: 'letters/editor/:id',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/letter-editor/letter-editor').then((m) => m.LetterEditor),
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, adminGuard],
     loadComponent: () => import('./pages/admin/admin-users').then((m) => m.AdminUsers),
@@ -43,6 +48,11 @@ export const routes: Routes = [
     path: 'admin/users/:userId/cvs/:id',
     canActivate: [authGuard, adminGuard],
     loadComponent: () => import('./pages/editor/editor').then((m) => m.Editor),
+  },
+  {
+    path: 'admin/users/:userId/letters/:id',
+    canActivate: [authGuard, adminGuard],
+    loadComponent: () => import('./pages/letter-editor/letter-editor').then((m) => m.LetterEditor),
   },
   {
     // no authGuard: rendered by the backend's headless Chromium with data injected via
