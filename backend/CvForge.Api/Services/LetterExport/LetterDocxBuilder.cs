@@ -17,7 +17,7 @@ public class LetterDocxBuilder(string font, bool useColor, bool formal)
         var sender = doc.Sender;
         var recipient = doc.Recipient;
 
-        body.AppendChild(DocxHelpers.Line($"{sender.FirstName} {sender.LastName}", font, sizeHalfPt: 24, bold: true, colorHex: primary));
+        body.AppendChild(DocxHelpers.Line(CvTextHelpers.Join(" ", sender.FirstName, sender.LastName), font, sizeHalfPt: 24, bold: true, colorHex: primary));
         var senderContact = CvTextHelpers.Join(" · ", sender.Email, sender.Phone, sender.City);
         if (senderContact.Length > 0) body.AppendChild(DocxHelpers.Line(senderContact, font, sizeHalfPt: 18, colorHex: secondary, spacingAfter: "200"));
 
@@ -51,6 +51,6 @@ public class LetterDocxBuilder(string font, bool useColor, bool formal)
                 font, spacingAfter: "200"));
         }
 
-        body.AppendChild(DocxHelpers.Line($"{sender.FirstName} {sender.LastName}", font, bold: true));
+        body.AppendChild(DocxHelpers.Line(CvTextHelpers.Join(" ", sender.FirstName, sender.LastName), font, bold: true));
     }
 }
