@@ -10,10 +10,11 @@ import { ToastService } from '../../core/toast.service';
 import { CvDocument, CvSummary } from '../../models/cv-document';
 import { Modal } from '../../ui/modal';
 import { Skeleton } from '../../ui/skeleton';
+import { LettersTab } from './letters-tab.component';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink, TPipe, DatePipe, Modal, Skeleton],
+  imports: [RouterLink, TPipe, DatePipe, Modal, Skeleton, LettersTab],
   template: `
     <main class="min-h-screen bg-slate-100 p-8 dark:bg-slate-900">
       <header class="mb-6 flex items-center justify-between">
@@ -23,6 +24,21 @@ import { Skeleton } from '../../ui/skeleton';
           <a routerLink="/profile" class="text-slate-600 hover:underline dark:text-slate-300">{{ 'profile.title' | t }}</a>
         </div>
       </header>
+
+      <div class="mb-6 flex gap-2">
+        <button type="button" (click)="tab.set('cvs')" class="rounded px-3 py-1.5 text-sm font-medium"
+                [class.bg-slate-800]="tab() === 'cvs'" [class.text-white]="tab() === 'cvs'"
+                [class.text-slate-600]="tab() !== 'cvs'" [class.dark:text-slate-300]="tab() !== 'cvs'">
+          CV
+        </button>
+        <button type="button" (click)="tab.set('letters')" class="rounded px-3 py-1.5 text-sm font-medium"
+                [class.bg-slate-800]="tab() === 'letters'" [class.text-white]="tab() === 'letters'"
+                [class.text-slate-600]="tab() !== 'letters'" [class.dark:text-slate-300]="tab() !== 'letters'">
+          Lettres
+        </button>
+      </div>
+
+      @if (tab() === 'cvs') {
 
       <div class="mb-6 flex items-center gap-3">
         <button
@@ -146,6 +162,10 @@ import { Skeleton } from '../../ui/skeleton';
           </div>
         </app-modal>
       }
+
+      } @else {
+        <app-letters-tab />
+      }
     </main>
   `,
 })
@@ -155,6 +175,7 @@ export class Dashboard implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
+  readonly tab = signal<'cvs' | 'letters'>('cvs');
   readonly cvs = signal<CvSummary[]>([]);
   readonly thumbnails = signal<Record<string, string>>({});
   readonly renamingId = signal<string | null>(null);
