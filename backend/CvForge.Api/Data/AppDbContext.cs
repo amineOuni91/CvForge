@@ -7,6 +7,7 @@ namespace CvForge.Api.Data;
 public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbContext<AppUser>(options)
 {
     public DbSet<Cv> Cvs => Set<Cv>();
+    public DbSet<CoverLetter> CoverLetters => Set<CoverLetter>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -33,6 +34,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
                 document.OwnsMany(d => d.SkillCategories);
                 document.OwnsMany(d => d.Languages);
                 document.OwnsMany(d => d.Certifications);
+            });
+        });
+
+        builder.Entity<CoverLetter>(entity =>
+        {
+            entity.HasIndex(c => new { c.UserId, c.UpdatedAt });
+            entity.HasOne<AppUser>().WithMany().HasForeignKey(c => c.UserId).OnDelete(DeleteBehavior.Cascade);
+
+            entity.OwnsOne(c => c.Document, document =>
+            {
+                document.ToJson();
+                document.OwnsOne(d => d.Settings);
+                document.OwnsOne(d => d.Sender);
+                document.OwnsOne(d => d.Recipient);
             });
         });
 
