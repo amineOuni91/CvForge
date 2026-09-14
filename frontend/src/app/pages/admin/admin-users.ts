@@ -9,6 +9,7 @@ import { TPipe } from '../../core/t.pipe';
 import { I18nService } from '../../core/i18n.service';
 import { Modal } from '../../ui/modal';
 import { PasswordInput } from '../../ui/password-input';
+import { AdminUserLettersPanel } from './admin-user-letters-panel.component';
 
 export interface AdminUser {
   id: string;
@@ -54,7 +55,7 @@ type PendingAction =
 
 @Component({
   selector: 'app-admin-users',
-  imports: [ReactiveFormsModule, RouterLink, TPipe, Modal, DatePipe, PasswordInput],
+  imports: [ReactiveFormsModule, RouterLink, TPipe, Modal, DatePipe, PasswordInput, AdminUserLettersPanel],
   template: `
     <main class="min-h-screen bg-slate-100 p-6 dark:bg-slate-900">
       <div class="mx-auto mb-6 max-w-5xl">
@@ -374,6 +375,8 @@ type PendingAction =
                         }
                       </ul>
                     }
+
+                    <app-admin-user-letters-panel [userId]="user.id" />
                   </td>
                 </tr>
               }
