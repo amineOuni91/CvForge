@@ -1,0 +1,45 @@
+@page {
+  size: A4;
+  margin: 20mm;
+}
+
+.letter-page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 20mm;
+  background: white;
+  color: #1e293b;
+  font-family: var(--letter-font, system-ui), sans-serif;
+  font-size: calc(11pt * var(--letter-scale, 1));
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.letter-page p {
+  margin: 0 0 12px;
+  orphans: 2;
+  widows: 2;
+}
+
+.letter-sender-name {
+  font-weight: 700;
+  color: var(--letter-primary);
+}
+
+.letter-sender-contact,
+.letter-date,
+.letter-recipient {
+  font-size: calc(9.5pt * var(--letter-scale, 1));
+  color: var(--letter-secondary);
+}
+
+.letter-subject {
+  font-weight: 600;
+  margin: 16px 0;
+  color: var(--letter-primary);
+}
+
+.letter-signature {
+  margin-top: 24px;
+  font-weight: 600;
+}
