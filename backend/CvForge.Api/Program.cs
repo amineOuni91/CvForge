@@ -37,6 +37,7 @@ else
     builder.Services.AddSingleton<IEmailChangeSender>(sp => sp.GetRequiredService<LoggingEmailSender>());
 }
 builder.Services.AddScoped<IValidator<CvDocument>, CvDocumentValidator>();
+builder.Services.AddScoped<IValidator<LetterDocument>, LetterDocumentValidator>();
 builder.Services.AddSingleton<PdfService>();
 builder.Services.AddSingleton<CvForge.Api.Services.DocxExport.DocxExportService>();
 builder.Services.AddSingleton<TxtExportService>();
@@ -75,6 +76,9 @@ authGroup.MapAuthEndpoints();
 var cvGroup = app.MapGroup("/api/cvs");
 cvGroup.MapCvEndpoints();
 cvGroup.MapExportEndpoints();
+
+var letterGroup = app.MapGroup("/api/letters");
+letterGroup.MapLetterEndpoints();
 
 app.MapGroup("/api/ats").MapAtsEndpoints();
 app.MapGroup("/api/import").MapImportEndpoints();
