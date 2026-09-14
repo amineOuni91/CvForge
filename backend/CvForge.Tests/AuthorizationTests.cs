@@ -126,6 +126,77 @@ public class AuthorizationTests(DatabaseFixture fixture)
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
+    [Fact]
+    public async Task GetLetter_OwnedByAnotherUser_Returns404NotForbidden()
+    {
+        var owner = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var stranger = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+
+        var create = await owner.PostAsJsonAsync("/api/letters", new { });
+        var letter = await create.Content.ReadFromJsonAsync<LetterSummaryDto>();
+
+        var response = await stranger.GetAsync($"/api/letters/{letter!.Id}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateLetter_OwnedByAnotherUser_Returns404()
+    {
+        var owner = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var stranger = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+
+        var create = await owner.PostAsJsonAsync("/api/letters", new { });
+        var letter = await create.Content.ReadFromJsonAsync<LetterSummaryDto>();
+        var ownedDoc = await (await owner.GetAsync($"/api/letters/{letter!.Id}")).Content.ReadFromJsonAsync<LetterDto>();
+
+        var response = await stranger.PutAsJsonAsync($"/api/letters/{letter.Id}", ownedDoc!.Document);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteLetter_OwnedByAnotherUser_Returns404AndLetterSurvives()
+    {
+        var owner = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var stranger = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+
+        var create = await owner.PostAsJsonAsync("/api/letters", new { });
+        var letter = await create.Content.ReadFromJsonAsync<LetterSummaryDto>();
+
+        var deleteResponse = await stranger.DeleteAsync($"/api/letters/{letter!.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
+
+        var stillThere = await owner.GetAsync($"/api/letters/{letter.Id}");
+        Assert.Equal(HttpStatusCode.OK, stillThere.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListLetters_OnlyReturnsCallersOwnLetters()
+    {
+        var userA = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var userB = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+
+        var create = await userA.PostAsJsonAsync("/api/letters", new { name = "User A's letter" });
+        var letter = await create.Content.ReadFromJsonAsync<LetterSummaryDto>();
+
+        var userBList = await userB.GetFromJsonAsync<List<LetterSummaryDto>>("/api/letters");
+
+        Assert.DoesNotContain(userBList!, l => l.Id == letter!.Id);
+    }
+
+    [Fact]
+    public async Task LetterEndpoints_WithoutToken_Return401()
+    {
+        var anonymous = fixture.Factory.CreateClient();
+
+        var response = await anonymous.GetAsync("/api/letters");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
     private record CvSummaryDto(Guid Id, string Name, DateTime CreatedAt, DateTime UpdatedAt);
     private record CvDto(Guid Id, string Name, object Document, DateTime CreatedAt, DateTime UpdatedAt);
+    private record LetterSummaryDto(Guid Id, string Name, DateTime CreatedAt, DateTime UpdatedAt);
+    private record LetterDto(Guid Id, string Name, object Document, DateTime CreatedAt, DateTime UpdatedAt);
 }
