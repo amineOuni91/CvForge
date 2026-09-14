@@ -1,11 +1,15 @@
+using System.Net;
+using System.Net.Http.Json;
 using CvForge.Api.Domain;
 using CvForge.Api.Services.LetterExport;
+using CvForge.Tests.Infrastructure;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Validation;
 
 namespace CvForge.Tests;
 
-public class LetterExportTests
+[Collection("Database collection")]
+public class LetterExportTests(DatabaseFixture fixture)
 {
     [Theory]
     [InlineData("classique")]
@@ -39,4 +43,46 @@ public class LetterExportTests
         Skills = "Compétences.",
         Conclusion = "Conclusion.",
     };
+
+    [Theory]
+    [InlineData("pdf", "application/pdf")]
+    [InlineData("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")]
+    [InlineData("txt", "text/plain")]
+    [InlineData("html", "text/html")]
+    [InlineData("json", "application/json")]
+    public async Task Export_EachFormat_Returns200WithExpectedContentType(string format, string expectedContentType)
+    {
+        var client = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var created = await (await client.PostAsJsonAsync("/api/letters", new { })).Content.ReadFromJsonAsync<LetterSummaryDto>();
+
+        var response = await client.GetAsync($"/api/letters/{created!.Id}/export/{format}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.StartsWith(expectedContentType, response.Content.Headers.ContentType!.ToString());
+    }
+
+    [Fact]
+    public async Task Export_WithUnknownFormat_Returns400()
+    {
+        var client = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var created = await (await client.PostAsJsonAsync("/api/letters", new { })).Content.ReadFromJsonAsync<LetterSummaryDto>();
+
+        var response = await client.GetAsync($"/api/letters/{created!.Id}/export/rtf");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Export_OwnedByAnotherUser_Returns404NotForbidden()
+    {
+        var owner = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var stranger = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var created = await (await owner.PostAsJsonAsync("/api/letters", new { })).Content.ReadFromJsonAsync<LetterSummaryDto>();
+
+        var response = await stranger.GetAsync($"/api/letters/{created!.Id}/export/json");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    private record LetterSummaryDto(Guid Id, string Name, DateTime CreatedAt, DateTime UpdatedAt);
 }

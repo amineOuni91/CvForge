@@ -41,6 +41,8 @@ builder.Services.AddScoped<IValidator<LetterDocument>, LetterDocumentValidator>(
 builder.Services.AddSingleton<PdfService>();
 builder.Services.AddSingleton<CvForge.Api.Services.DocxExport.DocxExportService>();
 builder.Services.AddSingleton<TxtExportService>();
+builder.Services.AddSingleton<CvForge.Api.Services.LetterExport.LetterDocxService>();
+builder.Services.AddSingleton<LetterTxtExportService>();
 
 const string FrontendCorsPolicy = "Frontend";
 builder.Services.AddCors(options =>
@@ -79,6 +81,7 @@ cvGroup.MapExportEndpoints();
 
 var letterGroup = app.MapGroup("/api/letters");
 letterGroup.MapLetterEndpoints();
+letterGroup.MapLetterExportEndpoints();
 
 app.MapGroup("/api/ats").MapAtsEndpoints();
 app.MapGroup("/api/import").MapImportEndpoints();
