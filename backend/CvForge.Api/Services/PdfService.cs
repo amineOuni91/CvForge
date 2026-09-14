@@ -96,6 +96,80 @@ public class PdfService : IAsyncDisposable
         return page;
     }
 
+    public async Task<byte[]> RenderLetterPdfAsync(CoverLetter letter, CancellationToken cancellationToken = default)
+    {
+        var page = await OpenPrintLetterPageAsync(letter);
+        try
+        {
+            return await page.PdfAsync(new PagePdfOptions
+            {
+                Format = "A4",
+                PrintBackground = true,
+                PreferCSSPageSize = true,
+            });
+        }
+        finally
+        {
+            await page.CloseAsync();
+        }
+    }
+
+    public async Task<string> RenderLetterHtmlAsync(CoverLetter letter, CancellationToken cancellationToken = default)
+    {
+        var page = await OpenPrintLetterPageAsync(letter);
+        try
+        {
+            var css = await page.EvaluateAsync<string>(
+                "() => [...document.styleSheets].map(sheet => { try { return [...sheet.cssRules].map(r => r.cssText).join('\\n'); } catch { return ''; } }).join('\\n')");
+            var pageHtml = await page.EvalOnSelectorAsync<string>(".letter-page", "el => el.outerHTML");
+            var title = System.Net.WebUtility.HtmlEncode(letter.Name);
+            return $"<!doctype html><html><head><meta charset=\"utf-8\"><title>{title}</title><style>{css}</style></head><body>{pageHtml}</body></html>";
+        }
+        finally
+        {
+            await page.CloseAsync();
+        }
+    }
+
+    public async Task<byte[]> RenderLetterThumbnailAsync(CoverLetter letter, CancellationToken cancellationToken = default)
+    {
+        var page = await OpenPrintLetterPageAsync(letter, viewportWidth: 420, viewportHeight: 594);
+        try
+        {
+            var letterPage = page.Locator(".letter-page");
+            return await letterPage.ScreenshotAsync(new LocatorScreenshotOptions { Type = ScreenshotType.Jpeg, Quality = 70 });
+        }
+        finally
+        {
+            await page.CloseAsync();
+        }
+    }
+
+    private async Task<IPage> OpenPrintLetterPageAsync(CoverLetter letter, int viewportWidth = 1240, int viewportHeight = 1754)
+    {
+        var browser = await GetBrowserAsync();
+        var page = await browser.NewPageAsync(new BrowserNewPageOptions
+        {
+            ViewportSize = new ViewportSize { Width = viewportWidth, Height = viewportHeight },
+        });
+
+        var json = JsonSerializer.Serialize(letter.Document, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        });
+        await page.AddInitScriptAsync($"window.__letter = {json};");
+        await page.GotoAsync($"{_frontendOrigin}/print/letter/{letter.Id}", new PageGotoOptions
+        {
+            WaitUntil = WaitUntilState.NetworkIdle,
+        });
+        await page.WaitForFunctionAsync("window.__letterReady === true", new PageWaitForFunctionOptions
+        {
+            Timeout = 15000,
+        });
+
+        return page;
+    }
+
     private async Task<IBrowser> GetBrowserAsync()
     {
         if (_browser is not null) return _browser;
