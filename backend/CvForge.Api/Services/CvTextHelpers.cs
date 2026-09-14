@@ -37,6 +37,16 @@ public static class CvTextHelpers
         return $"{months[month - 1]} {parts[0]}";
     }
 
+    public static string FormatFullDate(string? value, string lang)
+    {
+        if (string.IsNullOrEmpty(value)) return "";
+        var parts = value.Split('-');
+        if (parts.Length != 3 || !int.TryParse(parts[1], out var month) || month is < 1 or > 12 || !int.TryParse(parts[2], out var day))
+            return value;
+        var months = lang == "fr" ? MonthsFr : MonthsEn;
+        return lang == "fr" ? $"{day} {months[month - 1]} {parts[0]}" : $"{months[month - 1]} {day}, {parts[0]}";
+    }
+
     /// <summary>Joins non-blank fields with a separator, skipping blanks instead of leaving a dangling separator
     /// (e.g. "Position · " when Company is empty). Mirrors templates/join-fields.ts on the frontend.</summary>
     public static string Join(string separator, params string?[] parts) =>
