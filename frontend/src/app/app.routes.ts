@@ -40,6 +40,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/letter-editor/letter-editor').then((m) => m.LetterEditor),
   },
   {
+    path: 'offers/:id',
+    canActivate: [authGuard],
+    loadComponent: () => import('./pages/offer-editor/offer-editor').then((m) => m.OfferEditor),
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, adminGuard],
     loadComponent: () => import('./pages/admin/admin-users').then((m) => m.AdminUsers),
