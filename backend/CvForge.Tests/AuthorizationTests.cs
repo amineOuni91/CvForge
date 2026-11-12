@@ -237,6 +237,48 @@ public class AuthorizationTests(DatabaseFixture fixture)
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task GetOffer_OwnedByAnotherUser_Returns404NotForbidden()
+    {
+        var (_, stranger, offer) = await OfferSetupAsync();
+        var response = await stranger.GetAsync($"/api/offers/{offer.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateOffer_OwnedByAnotherUser_Returns404()
+    {
+        var (_, stranger, offer) = await OfferSetupAsync();
+        var response = await stranger.PutAsJsonAsync($"/api/offers/{offer.Id}", offer.Document);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteOffer_OwnedByAnotherUser_Returns404AndOfferSurvives()
+    {
+        var (owner, stranger, offer) = await OfferSetupAsync();
+        var response = await stranger.DeleteAsync($"/api/offers/{offer.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await owner.GetAsync($"/api/offers/{offer.Id}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task ListOffers_OnlyReturnsCallersOwnOffers()
+    {
+        var (_, stranger, offer) = await OfferSetupAsync();
+        var list = await stranger.GetFromJsonAsync<List<OfferDto>>("/api/offers");
+        Assert.DoesNotContain(list!, o => o.Id == offer.Id);
+    }
+
+    private async Task<(HttpClient Owner, HttpClient Stranger, OfferDto Offer)> OfferSetupAsync()
+    {
+        var owner = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var stranger = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
+        var offer = await (await owner.PostAsJsonAsync("/api/offers", new { })).Content.ReadFromJsonAsync<OfferDto>();
+        return (owner, stranger, offer!);
+    }
+
+    private record OfferDto(Guid Id, CvForge.Api.Domain.OfferDocument Document);
     private record CvSummaryDto(Guid Id, string Name, DateTime CreatedAt, DateTime UpdatedAt);
     private record CvDto(Guid Id, string Name, object Document, DateTime CreatedAt, DateTime UpdatedAt);
     private record LetterSummaryDto(Guid Id, string Name, DateTime CreatedAt, DateTime UpdatedAt);
