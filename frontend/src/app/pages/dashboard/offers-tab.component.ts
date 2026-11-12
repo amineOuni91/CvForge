@@ -191,7 +191,7 @@ export class OffersTab implements OnInit {
 
   readonly statsText = computed(() =>
     this.i18n
-      .t('offers.stats')
+      .t(this.offers().length === 1 ? 'offers.stats.one' : 'offers.stats')
       .replace('{n}', String(this.offers().length))
       .replace('{m}', String(this.offers().filter((o) => o.cvs.length > 0).length)),
   );
@@ -199,21 +199,32 @@ export class OffersTab implements OnInit {
   async ngOnInit(): Promise<void> {
     try {
       this.offers.set(await firstValueFrom(this.http.get<JobOfferDto[]>(`${API_BASE_URL}/api/offers`)));
+    } catch {
+      this.toast.error(this.i18n.t('offers.error.load'));
     } finally {
       this.loading.set(false);
     }
   }
 
   async createOffer(): Promise<void> {
-    const created = await firstValueFrom(this.http.post<JobOfferDto>(`${API_BASE_URL}/api/offers`, {}));
-    await this.router.navigate(['/offers', created.id]);
+    try {
+      const created = await firstValueFrom(this.http.post<JobOfferDto>(`${API_BASE_URL}/api/offers`, {}));
+      await this.router.navigate(['/offers', created.id]);
+    } catch {
+      this.toast.error(this.i18n.t('offers.error.create'));
+    }
   }
 
   async confirmDelete(id: string): Promise<void> {
-    await firstValueFrom(this.http.delete(`${API_BASE_URL}/api/offers/${id}`));
-    this.toDelete.set(null);
-    this.offers.update((list) => list.filter((o) => o.id !== id));
-    this.toast.success(this.i18n.t('offers.deleted'));
+    try {
+      await firstValueFrom(this.http.delete(`${API_BASE_URL}/api/offers/${id}`));
+      this.offers.update((list) => list.filter((o) => o.id !== id));
+      this.toast.success(this.i18n.t('offers.deleted'));
+    } catch {
+      this.toast.error(this.i18n.t('offers.error.delete'));
+    } finally {
+      this.toDelete.set(null);
+    }
   }
 
   nextOf(o: JobOfferDto): OfferStep | null {
