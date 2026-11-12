@@ -83,9 +83,10 @@ export class OfferPanel {
     // Re-fetch the match when the CV changes and after every successful autosave.
     effect(() => {
       const cvId = this.store.cvId();
-      const offerId = this.offers.offerId();
+      const offerId = this.store.jobOfferId();
+      const loaded = this.offers.offerId(); // root-singleton: may still hold another offer
       const state = this.store.saveState();
-      if (cvId && offerId && (state === 'idle' || state === 'saved')) untracked(() => this.refresh(offerId, cvId));
+      if (cvId && offerId && loaded === offerId && (state === 'idle' || state === 'saved')) untracked(() => this.refresh(offerId, cvId));
     });
   }
 
@@ -106,6 +107,7 @@ export class OfferPanel {
         return { ...doc, skillCategories: [{ name, skills: [tech] }] };
       }
       const last = cats[cats.length - 1];
+      if (last.skills.some((s) => s.toLowerCase() === tech.toLowerCase())) return doc;
       return { ...doc, skillCategories: [...cats.slice(0, -1), { ...last, skills: [...last.skills, tech] }] };
     });
   }

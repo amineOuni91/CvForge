@@ -1,4 +1,5 @@
-import { Component, computed, effect, inject, OnInit, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, OnInit, signal, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CvStore } from '../../editor/cv-store';
 import { OfferStore } from '../../editor/offer-store';
@@ -45,7 +46,7 @@ import { TemplateHostComponent } from '../../templates/template-host.component';
           <span class="text-sm text-slate-500 dark:text-slate-400">{{ saveLabel() }}</span>
           @if (linkedOfferId()) {
             <button type="button" (click)="offerOpen.set(!offerOpen())" [title]="'offerPanel.toggle' | t"
-                    class="rounded border border-slate-300 px-3 py-1.5 text-sm text-slate-700 dark:border-slate-600 dark:text-slate-200">📋 {{ 'offerPanel.title' | t }}</button>
+                    class="hidden rounded border border-slate-300 px-3 py-1.5 text-sm text-slate-700 lg:block dark:border-slate-600 dark:text-slate-200">📋 {{ 'offerPanel.title' | t }}</button>
           }
           <select
             [value]="store.exportFormat()"
@@ -151,6 +152,7 @@ export class Editor implements OnInit {
   protected readonly auth = inject(AuthService);
   protected readonly offers = inject(OfferStore);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly i18n = inject(I18nService);
   protected score = formatScore;
 
@@ -203,7 +205,7 @@ export class Editor implements OnInit {
 
   ngOnInit(): void {
     // paramMap (not snapshot): the CV switcher navigates /editor/:id -> /editor/:id2 reusing this component.
-    this.route.paramMap.subscribe((params) => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const id = params.get('id');
       const adminUserId = params.get('userId') ?? undefined;
       if (id) this.store.load(id, adminUserId);

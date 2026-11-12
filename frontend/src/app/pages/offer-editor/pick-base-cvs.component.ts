@@ -117,7 +117,10 @@ export class PickBaseCvs implements OnInit, OnDestroy {
     }
   }
 
+  private destroyed = false;
+
   ngOnDestroy(): void {
+    this.destroyed = true;
     for (const url of Object.values(this.thumbnails())) URL.revokeObjectURL(url);
   }
 
@@ -155,6 +158,7 @@ export class PickBaseCvs implements OnInit, OnDestroy {
   private async loadThumbnail(id: string): Promise<void> {
     try {
       const blob = await firstValueFrom(this.http.get(`${API_BASE_URL}/api/cvs/${id}/thumbnail`, { responseType: 'blob' }));
+      if (this.destroyed) return;
       this.thumbnails.update((m) => ({ ...m, [id]: URL.createObjectURL(blob) }));
     } catch {
       // nice-to-have, keep the blank placeholder
