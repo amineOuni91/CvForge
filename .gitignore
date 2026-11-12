@@ -10,6 +10,7 @@ backend/CvForge.Api/uploads/
 frontend/node_modules/
 frontend/dist/
 frontend/.angular/
+/.angular/
 
 # Visual Studio (local cache/state, never committed)
 backend/.vs/
