@@ -93,6 +93,7 @@ export interface CvDto {
   document: CvDocument;
   createdAt: string;
   updatedAt: string;
+  jobOfferId?: string | null;
 }
 
 export interface CvSummary {
@@ -100,6 +101,7 @@ export interface CvSummary {
   name: string;
   createdAt: string;
   updatedAt: string;
+  jobOfferId?: string | null;
 }
 
 export const LANGUAGE_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', 'Native'] as const;
