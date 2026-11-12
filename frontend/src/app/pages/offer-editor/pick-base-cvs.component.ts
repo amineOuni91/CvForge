@@ -9,6 +9,7 @@ import { TPipe } from '../../core/t.pipe';
 import { ToastService } from '../../core/toast.service';
 import { CvDto, CvSummary } from '../../models/cv-document';
 import { OfferMatch } from '../../models/job-offer';
+import { OfferStore } from '../../editor/offer-store';
 import { Modal } from '../../ui/modal';
 
 interface Detail { language: string; match: OfferMatch }
@@ -17,7 +18,7 @@ interface Detail { language: string; match: OfferMatch }
   selector: 'app-pick-base-cvs',
   imports: [Modal, TPipe],
   template: `
-    <app-modal width="w-full max-w-3xl max-h-[90vh] overflow-y-auto" (close)="closed.emit()">
+    <app-modal align="items-start pt-[5vh]" width="w-full max-w-3xl max-h-[90vh] overflow-y-auto" (close)="closed.emit()">
       <h2 class="text-lg font-semibold text-slate-800 dark:text-slate-100">{{ 'offerPicker.title' | t }}</h2>
       <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ 'offerPicker.sub' | t }}</p>
 
@@ -94,6 +95,7 @@ export class PickBaseCvs implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(I18nService);
+  private readonly offers = inject(OfferStore);
 
   readonly cvs = signal<CvSummary[]>([]);
   readonly loading = signal(true);
@@ -172,6 +174,7 @@ export class PickBaseCvs implements OnInit, OnDestroy {
       const created = await firstValueFrom(
         this.http.post<CvSummary[]>(`${API_BASE_URL}/api/offers/${this.offerId()}/cvs`, { items }),
       );
+      await this.offers.reloadCvs().catch(() => undefined);
       await this.router.navigate(['/editor', created[0].id]);
     } catch {
       this.toast.error(this.i18n.t('offerPicker.createError'));

@@ -86,7 +86,7 @@ const INTERVIEW_TYPES: StepType[] = ['hrInterview', 'techInterview', 'directorIn
                 <input class="${INPUT}" [value]="s.label" (input)="patch(s.id, { label: $any($event.target).value })" /></label>
             }
             <label>{{ 'offerSteps.date' | t }}
-              <input type="datetime-local" class="${INPUT}" [value]="s.date ?? ''" (input)="patch(s.id, { date: $any($event.target).value || null })" /></label>
+              <input type="datetime-local" class="${INPUT}" [value]="s.date ?? ''" (input)="onDate(s.id, $any($event.target))" /></label>
             <label>{{ 'offerSteps.format' | t }}
               <select class="${INPUT}" (change)="patch(s.id, { format: $any($event.target).value })">
                 @for (f of formats; track f) {
@@ -127,6 +127,12 @@ const INTERVIEW_TYPES: StepType[] = ['hrInterview', 'techInterview', 'directorIn
   `,
 })
 export class OfferSteps {
+  /** Partially edited datetime-local (badInput) reports '' — ignore it so the [value] rebind doesn't wipe the field. */
+  protected onDate(id: string, el: HTMLInputElement): void {
+    if (el.validity.badInput) return;
+    this.patch(id, { date: el.value || null });
+  }
+
   private readonly store = inject(OfferStore);
   private readonly i18n = inject(I18nService);
 

@@ -82,7 +82,7 @@ const STATUSES: OfferStatus[] = ['toApply', 'applied', 'interview', 'rejected'];
       }
       <ul class="space-y-3">
         @for (o of filtered(); track o.id) {
-          <li class="flex items-center gap-4 rounded-lg bg-white p-4 shadow-sm ring-2 ring-transparent transition hover:shadow-md hover:ring-indigo-500 dark:bg-slate-800"
+          <li class="flex flex-col gap-4 rounded-lg bg-white p-4 shadow-sm ring-2 ring-transparent transition hover:shadow-md hover:ring-indigo-500 sm:flex-row sm:items-center dark:bg-slate-800"
               [class.opacity-60]="o.document.status === 'rejected'">
             <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-lg font-bold"
                  [class]="o.document.status === 'rejected'

@@ -23,6 +23,8 @@ public class OfferDocumentValidator : AbstractValidator<OfferDocument>
         RuleFor(d => d.ContractType).MaximumLength(200);
         RuleFor(d => d.Description).MaximumLength(10000);
         RuleFor(d => d.Notes).MaximumLength(5000);
+        foreach (var list in new System.Linq.Expressions.Expression<Func<OfferDocument, object?>>[] { d => d.Technologies, d => d.Missions, d => d.Requirements, d => d.Title, d => d.Company, d => d.Location, d => d.ContractType, d => d.Url, d => d.Description, d => d.Notes, d => d.Status })
+            RuleFor(list).NotNull();
         RuleFor(d => d.Steps).NotNull();
         RuleFor(d => d.Steps).Must(s => s.Count <= 50).When(d => d.Steps is not null);
         RuleForEach(d => d.Technologies).MaximumLength(100);
@@ -34,6 +36,11 @@ public class OfferDocumentValidator : AbstractValidator<OfferDocument>
             s.RuleFor(x => x.Date).Must(v => string.IsNullOrEmpty(v) ||
                 DateTime.TryParseExact(v, "yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
                 .WithMessage("Date doit être au format yyyy-MM-ddTHH:mm.");
+            s.RuleFor(x => x.Label).NotNull();
+            s.RuleFor(x => x.Contact).NotNull();
+            s.RuleFor(x => x.Place).NotNull();
+            s.RuleFor(x => x.NoteBefore).NotNull();
+            s.RuleFor(x => x.NoteAfter).NotNull();
             s.RuleFor(x => x.NoteBefore).MaximumLength(5000);
             s.RuleFor(x => x.NoteAfter).MaximumLength(5000);
         });

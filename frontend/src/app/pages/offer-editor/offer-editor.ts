@@ -138,7 +138,7 @@ export class OfferEditor implements OnInit {
   readonly pickOpen = signal(false);
   readonly statuses: OfferStatus[] = ['toApply', 'applied', 'interview', 'rejected'];
   readonly showSkeleton = computed(() => this.store.loading() || this.store.offerId() !== this.routeId);
-  readonly stepCount =computed(() => this.store.document()?.steps.length ?? 0);
+  readonly stepCount = computed(() => this.store.document()?.steps.length ?? 0);
   readonly saveLabel = computed(() => {
     switch (this.store.saveState()) {
       case 'saving': return this.i18n.t('offerEditor.saving');

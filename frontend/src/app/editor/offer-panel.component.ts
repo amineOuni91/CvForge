@@ -14,7 +14,7 @@ import { OfferStore } from './offer-store';
   selector: 'app-offer-panel',
   imports: [TPipe],
   template: `
-    <aside class="hidden w-72 shrink-0 overflow-y-auto border-r border-slate-200 bg-white p-4 text-sm text-slate-800 lg:block dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+    <aside class="hidden h-full w-72 shrink-0 overflow-y-auto border-r border-slate-200 bg-white p-4 text-sm text-slate-800 lg:block dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
       <p class="text-xs uppercase tracking-wide text-slate-400">{{ 'offerPanel.title' | t }}</p>
       @if (offers.document(); as o) {
         <h3 class="mt-1 font-semibold">{{ o.title }}</h3>

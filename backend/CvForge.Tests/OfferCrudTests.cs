@@ -54,6 +54,9 @@ public class OfferCrudTests(DatabaseFixture fixture)
     }
 
     [Fact]
+    public Task UpdateOffer_NullTechnologies_Returns400() => AssertPutReturns400(d => d.Technologies = null!);
+
+    [Fact]
     public Task UpdateOffer_InvalidStatus_Returns400() => AssertPutReturns400(d => d.Status = "nope");
 
     [Fact]

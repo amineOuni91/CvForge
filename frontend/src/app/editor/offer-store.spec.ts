@@ -65,6 +65,22 @@ describe('OfferStore', () => {
     expect(store.saveState()).toBe('saved');
   });
 
+  it('load() flushes a pending autosave of the previous offer first', async () => {
+    await loaded();
+    store.update((d) => ({ ...d, title: 'Edited' }));
+    const p = store.load('offer-2');
+    const put = httpMock.expectOne(url);
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.body.title).toBe('Edited');
+    put.flush(makeDto());
+    await new Promise((r) => setTimeout(r));
+    const get = httpMock.expectOne(`${API_BASE_URL}/api/offers/offer-2`);
+    expect(get.request.method).toBe('GET');
+    get.flush({ ...makeDto(), id: 'offer-2' });
+    await p;
+    expect(store.offerId()).toBe('offer-2');
+  });
+
   it('saved response refreshes cvs scores', async () => {
     await loaded();
     store.update((d) => ({ ...d, technologies: ['C#', 'Angular'] }));

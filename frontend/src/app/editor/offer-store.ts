@@ -21,6 +21,8 @@ export class OfferStore {
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
   async load(id: string): Promise<void> {
+    // flush a pending autosave of the previous offer before replacing the document
+    if (this.saveTimeout) await this.saveNow();
     this.loading.set(true);
     try {
       const offer = await firstValueFrom(this.http.get<JobOfferDto>(`${API_BASE_URL}/api/offers/${id}`));
