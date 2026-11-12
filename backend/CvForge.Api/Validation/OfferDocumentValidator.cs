@@ -23,7 +23,8 @@ public class OfferDocumentValidator : AbstractValidator<OfferDocument>
         RuleFor(d => d.ContractType).MaximumLength(200);
         RuleFor(d => d.Description).MaximumLength(10000);
         RuleFor(d => d.Notes).MaximumLength(5000);
-        RuleFor(d => d.Steps).Must(s => s.Count <= 50);
+        RuleFor(d => d.Steps).NotNull();
+        RuleFor(d => d.Steps).Must(s => s.Count <= 50).When(d => d.Steps is not null);
         RuleForEach(d => d.Technologies).MaximumLength(100);
         RuleForEach(d => d.Steps).ChildRules(s =>
         {

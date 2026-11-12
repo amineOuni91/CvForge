@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using CvForge.Api.Data;
 using CvForge.Api.Domain;
 using CvForge.Api.Services;
@@ -23,8 +24,13 @@ public static class OfferEndpoints
             return Results.Ok(offers.Select(o => ToDto(o, byOffer.GetValueOrDefault(o.Id) ?? [])).ToList());
         });
 
-        group.MapPost("/", async (OfferDocument? document, ClaimsPrincipal principal, AppDbContext db, UserManager<AppUser> userManager) =>
+        group.MapPost("/", async (OfferDocument? document, ClaimsPrincipal principal, AppDbContext db, UserManager<AppUser> userManager, IValidator<OfferDocument> validator) =>
         {
+            if (document is not null)
+            {
+                var validation = await validator.ValidateAsync(document);
+                if (!validation.IsValid) return Results.ValidationProblem(validation.ToDictionary());
+            }
             var offer = new JobOffer { UserId = userManager.GetUserId(principal)!, Document = document ?? new OfferDocument() };
             db.JobOffers.Add(offer);
             await db.SaveChangesAsync();
@@ -59,6 +65,49 @@ public static class OfferEndpoints
             return Results.Ok(await ToDtoAsync(db, offer));
         });
 
+        group.MapPost("/{id:guid}/cvs", async (Guid id, CreateOfferCvsRequest request, ClaimsPrincipal principal, AppDbContext db, UserManager<AppUser> userManager) =>
+        {
+            if (request.Items is null || request.Items.Count is 0 or > 10)
+                return Results.ValidationProblem(new Dictionary<string, string[]> { ["items"] = ["1 à 10 CV attendus."] });
+
+            var userId = userManager.GetUserId(principal)!;
+            var offer = await db.LoadOwnedOfferAsync(userId, id);
+            if (offer is null) return Results.NotFound();
+
+            var copies = new List<Cv>();
+            foreach (var item in request.Items)
+            {
+                var baseCv = await db.LoadOwnedCvAsync(userId, item.BaseCvId);
+                if (baseCv is null) return Results.NotFound();
+
+                var name = item.Name?.Trim();
+                if (string.IsNullOrEmpty(name))
+                    name = string.IsNullOrWhiteSpace(offer.Document.Title) ? baseCv.Name : $"{baseCv.Name} – {offer.Document.Title}";
+                copies.Add(new Cv
+                {
+                    UserId = userId,
+                    Name = name,
+                    JobOfferId = id,
+                    // deep copy, same as /duplicate
+                    Document = JsonSerializer.Deserialize<CvDocument>(JsonSerializer.Serialize(baseCv.Document))!,
+                });
+            }
+            db.Cvs.AddRange(copies);
+            await db.SaveChangesAsync();
+            return Results.Created($"/api/offers/{id}",
+                copies.Select(c => new CvSummaryDto(c.Id, c.Name, c.CreatedAt, c.UpdatedAt, c.JobOfferId)).ToList());
+        });
+
+        group.MapGet("/{id:guid}/match/{cvId:guid}", async (Guid id, Guid cvId, ClaimsPrincipal principal, AppDbContext db, UserManager<AppUser> userManager) =>
+        {
+            var userId = userManager.GetUserId(principal)!;
+            var offer = await db.LoadOwnedOfferAsync(userId, id);
+            var cv = await db.LoadOwnedCvAsync(userId, cvId);
+            return offer is null || cv is null
+                ? Results.NotFound()
+                : Results.Ok(AtsAnalyzer.MatchOffer(cv.Document, offer.Document.Technologies));
+        });
+
         group.MapDelete("/{id:guid}", async (Guid id, ClaimsPrincipal principal, AppDbContext db, UserManager<AppUser> userManager) =>
         {
             var userId = userManager.GetUserId(principal)!;
@@ -89,5 +138,7 @@ public static class OfferEndpoints
            .ToList());
 }
 
+public record CreateOfferCvsRequest(List<OfferCvItem> Items);
+public record OfferCvItem(Guid BaseCvId, string? Name);
 public record LinkedCvDto(Guid Id, string Name, string Language, int? Score);
 public record JobOfferDto(Guid Id, OfferDocument Document, DateTime CreatedAt, DateTime UpdatedAt, List<LinkedCvDto> Cvs);

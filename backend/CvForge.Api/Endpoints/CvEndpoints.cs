@@ -21,7 +21,7 @@ public static class CvEndpoints
             var cvs = await db.Cvs
                 .Where(c => c.UserId == userId)
                 .OrderByDescending(c => c.UpdatedAt)
-                .Select(c => new CvSummaryDto(c.Id, c.Name, c.CreatedAt, c.UpdatedAt))
+                .Select(c => new CvSummaryDto(c.Id, c.Name, c.CreatedAt, c.UpdatedAt, c.JobOfferId))
                 .ToListAsync();
             return Results.Ok(cvs);
         });
@@ -167,6 +167,6 @@ public static class CvEndpoints
     }
 }
 
-public record CvSummaryDto(Guid Id, string Name, DateTime CreatedAt, DateTime UpdatedAt);
+public record CvSummaryDto(Guid Id, string Name, DateTime CreatedAt, DateTime UpdatedAt, Guid? JobOfferId = null);
 public record CreateCvRequest(string? Name, CvDocument? Document);
 public record RenameCvRequest(string Name);

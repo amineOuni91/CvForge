@@ -270,6 +270,27 @@ public class AuthorizationTests(DatabaseFixture fixture)
         Assert.DoesNotContain(list!, o => o.Id == offer.Id);
     }
 
+    [Fact]
+    public async Task CreateOfferCvs_OnAnotherUsersOffer_Returns404()
+    {
+        var (_, stranger, offer) = await OfferSetupAsync();
+        var mine = await (await stranger.PostAsJsonAsync("/api/cvs", new { })).Content.ReadFromJsonAsync<CvSummaryDto>();
+        var response = await stranger.PostAsJsonAsync($"/api/offers/{offer.Id}/cvs", new { items = new[] { new { baseCvId = mine!.Id } } });
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Match_OnAnotherUsersCv_Returns404()
+    {
+        var (owner, stranger, offer) = await OfferSetupAsync();
+        var theirs = await (await owner.PostAsJsonAsync("/api/cvs", new { })).Content.ReadFromJsonAsync<CvSummaryDto>();
+        var response = await stranger.GetAsync($"/api/offers/{offer.Id}/match/{theirs!.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        var mine = await (await stranger.PostAsJsonAsync("/api/cvs", new { })).Content.ReadFromJsonAsync<CvSummaryDto>();
+        // own CV against another user's offer is also 404
+        Assert.Equal(HttpStatusCode.NotFound, (await stranger.GetAsync($"/api/offers/{offer.Id}/match/{mine!.Id}")).StatusCode);
+    }
+
     private async Task<(HttpClient Owner, HttpClient Stranger, OfferDto Offer)> OfferSetupAsync()
     {
         var owner = await TestUser.CreateAuthenticatedClientAsync(fixture.Factory);
