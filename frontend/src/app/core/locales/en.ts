@@ -33,6 +33,8 @@ export const en: Record<string, string> = {
   'auth.reset.success': 'Password reset. You can now log in.',
   'auth.error.generic': 'Something went wrong. Check your details.',
   'auth.error.invalidCredentials': 'Incorrect email or password.',
+  'auth.error.attemptsLeft': 'Incorrect email or password. {n} attempt(s) left before the account is temporarily locked.',
+  'auth.error.lockedOut': 'Too many failed attempts: account temporarily locked. Try again at {time}, or reset your password.',
   'auth.error.technical': 'A technical error occurred. Please contact the administrator.',
   'auth.error.emailTaken': 'This email is already used by another account.',
   'auth.error.weakPassword': 'The password does not meet the security requirements (uppercase, lowercase, digit, special character).',

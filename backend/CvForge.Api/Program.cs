@@ -6,8 +6,12 @@ using CvForge.Api.Validation;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
+// Published desktop app (publish.ps1) runs in Production: still read the Gmail SMTP user-secrets on this machine
+if (!builder.Environment.IsDevelopment())
+    builder.Configuration.AddUserSecrets<Program>(optional: true);
 
 builder.Services.AddOpenApi();
 
@@ -60,11 +64,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
-
+// Published app: the Angular build sits in wwwroot (see publish.ps1); in development the Angular dev server serves it
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseCors(FrontendCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
@@ -72,7 +74,7 @@ app.UseAuthorization();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 var authGroup = app.MapGroup("/api/auth");
-authGroup.MapIdentityApi<AppUser>();
+authGroup.MapIdentityApi<AppUser>().AddEndpointFilter(AuthEndpoints.LoginAttemptsFilter);
 authGroup.MapAuthEndpoints();
 
 var cvGroup = app.MapGroup("/api/cvs");
@@ -103,7 +105,23 @@ using (var scope = app.Services.CreateScope())
         await userManager.AddToRoleAsync(bootstrapAdmin, "Admin");
 }
 
+// Angular routes (/editor/3…) reloaded in the browser get index.html; files and /api addresses stay 404
+app.MapFallbackToFile("{**path:nonfile:regex(^(?!api/).*$)}", "index.html");
+
+// Desktop shortcut ("OpenBrowser": true in appsettings.Production.json): opens the browser once the app listens.
+// Already running → port taken: open the browser on the running copy and stop this one.
+if (app.Configuration.GetValue<bool>("OpenBrowser"))
+{
+    var url = (app.Configuration["Urls"] ?? "http://localhost:5000").Split(';')[0];
+    app.Lifetime.ApplicationStarted.Register(() => OpenBrowser(url));
+    try { app.Run(); }
+    catch (IOException) { OpenBrowser(url); }
+    return;
+}
+
 app.Run();
+
+static void OpenBrowser(string url) => Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
 
 /// <summary>Exposed for WebApplicationFactory&lt;Program&gt; in CvForge.Tests.</summary>
 public partial class Program { }

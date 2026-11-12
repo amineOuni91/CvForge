@@ -4,6 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Icon of the published executable and Desktop shortcut (publish.ps1); the browser tab uses frontend/public/favicon.ico -->
+    <ApplicationIcon>app.ico</ApplicationIcon>
     <UserSecretsId>022a3c2f-d3f8-4bf9-a4ad-a9be9a38a60f</UserSecretsId>
   </PropertyGroup>
 

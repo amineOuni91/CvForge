@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { formatDate } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { TPipe } from '../../core/t.pipe';
@@ -33,7 +34,9 @@ import { PasswordInput } from '../../ui/password-input';
         </label>
 
         @if (error()) {
-          <p class="mb-3 text-sm text-red-600 dark:text-red-400">{{ error()! | t }}</p>
+          <p class="mb-3 text-sm text-red-600 dark:text-red-400">
+            {{ (error()! | t).replace('{n}', '' + errorParams().n).replace('{time}', errorParams().time) }}
+          </p>
         }
 
         <button
@@ -67,6 +70,8 @@ export class Login {
 
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
+  // values substituted in the attemptsLeft / lockedOut messages
+  readonly errorParams = signal({ n: 0, time: '' });
 
   readonly form = new FormGroup({
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
@@ -82,7 +87,20 @@ export class Login {
       await this.auth.login(email, password);
       await this.router.navigateByUrl('/dashboard');
     } catch (err) {
-      this.error.set(describeAuthError(err, 'Login', (e) => (e.status === 401 ? 'auth.error.invalidCredentials' : null)));
+      this.error.set(describeAuthError(err, 'Login', (e) => {
+        if (e.status !== 401) return null;
+        // Identity /login failure, enriched server-side (AuthEndpoints.LoginAttemptsFilter) for known accounts
+        const { remainingAttempts, lockoutEnd } = e.error ?? {};
+        if (lockoutEnd) {
+          this.errorParams.set({ n: 0, time: formatDate(lockoutEnd, 'HH:mm', 'en-US') });
+          return 'auth.error.lockedOut';
+        }
+        if (typeof remainingAttempts === 'number') {
+          this.errorParams.set({ n: remainingAttempts, time: '' });
+          return 'auth.error.attemptsLeft';
+        }
+        return 'auth.error.invalidCredentials';
+      }));
     } finally {
       this.submitting.set(false);
     }

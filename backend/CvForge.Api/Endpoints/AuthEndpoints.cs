@@ -2,7 +2,9 @@ using System.Security.Claims;
 using System.Text;
 using CvForge.Api.Domain;
 using CvForge.Api.Services;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 
@@ -89,6 +91,32 @@ public static class AuthEndpoints
             var result = await userManager.ConfirmEmailAsync(user, decodedCode);
             return result.Succeeded ? Results.Ok() : Results.BadRequest(new { error = "Code invalide ou expiré." });
         });
+    }
+
+    /// <summary>
+    /// Enriches MapIdentityApi's failed /login (401, detail "Failed" or "LockedOut") with the attempts left before
+    /// lockout, or the lockout end. Unknown email → body untouched (no counter exists for it).
+    /// </summary>
+    public static async ValueTask<object?> LoginAttemptsFilter(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    {
+        var result = await next(context);
+        if (!context.HttpContext.Request.Path.Value!.EndsWith("/login", StringComparison.OrdinalIgnoreCase)) return result;
+
+        var inner = result is INestedHttpResult nested ? nested.Result : result;
+        if (inner is not ProblemHttpResult { StatusCode: StatusCodes.Status401Unauthorized } problem) return result;
+
+        var login = context.Arguments.OfType<LoginRequest>().FirstOrDefault();
+        var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<AppUser>>();
+        var user = login is null ? null : await userManager.FindByEmailAsync(login.Email);
+        if (user is null || !userManager.SupportsUserLockout || !await userManager.GetLockoutEnabledAsync(user)) return result;
+
+        var extensions = new Dictionary<string, object?>();
+        if (await userManager.IsLockedOutAsync(user))
+            extensions["lockoutEnd"] = await userManager.GetLockoutEndDateAsync(user);
+        else
+            extensions["remainingAttempts"] = userManager.Options.Lockout.MaxFailedAccessAttempts - await userManager.GetAccessFailedCountAsync(user);
+
+        return TypedResults.Problem(problem.ProblemDetails.Detail, statusCode: StatusCodes.Status401Unauthorized, extensions: extensions);
     }
 
     private static async Task<string> RoleNameAsync(UserManager<AppUser> userManager, AppUser user) =>

@@ -33,6 +33,8 @@ export const fr: Record<string, string> = {
   'auth.reset.success': 'Mot de passe réinitialisé. Vous pouvez vous connecter.',
   'auth.error.generic': "Une erreur est survenue. Vérifiez vos informations.",
   'auth.error.invalidCredentials': 'Email ou mot de passe incorrect.',
+  'auth.error.attemptsLeft': 'Email ou mot de passe incorrect. Il vous reste {n} tentative(s) avant le blocage temporaire du compte.',
+  'auth.error.lockedOut': 'Trop de tentatives échouées : compte bloqué temporairement. Réessayez à {time}, ou réinitialisez votre mot de passe.',
   'auth.error.technical': "Une erreur technique est survenue. Merci de contacter l'administrateur.",
   'auth.error.emailTaken': 'Cet email est déjà utilisé par un autre compte.',
   'auth.error.weakPassword': 'Le mot de passe ne respecte pas les critères de sécurité (majuscule, minuscule, chiffre, caractère spécial).',
