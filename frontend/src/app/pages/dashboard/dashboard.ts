@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL } from '../../core/api-config';
 import { TPipe } from '../../core/t.pipe';
@@ -11,10 +11,11 @@ import { CvDocument, CvSummary } from '../../models/cv-document';
 import { Modal } from '../../ui/modal';
 import { Skeleton } from '../../ui/skeleton';
 import { LettersTab } from './letters-tab.component';
+import { OffersTab } from './offers-tab.component';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink, TPipe, DatePipe, Modal, Skeleton, LettersTab],
+  imports: [RouterLink, TPipe, DatePipe, Modal, Skeleton, LettersTab, OffersTab],
   template: `
     <main class="min-h-screen bg-slate-100 p-8 dark:bg-slate-900">
       <header class="mb-6 flex items-center justify-between">
@@ -35,6 +36,11 @@ import { LettersTab } from './letters-tab.component';
                 [class.bg-slate-800]="tab() === 'letters'" [class.text-white]="tab() === 'letters'"
                 [class.text-slate-600]="tab() !== 'letters'" [class.dark:text-slate-300]="tab() !== 'letters'">
           {{ 'dashboard.tabLetters' | t }}
+        </button>
+        <button type="button" (click)="tab.set('offers')" class="rounded px-3 py-1.5 text-sm font-medium"
+                [class.bg-slate-800]="tab() === 'offers'" [class.text-white]="tab() === 'offers'"
+                [class.text-slate-600]="tab() !== 'offers'" [class.dark:text-slate-300]="tab() !== 'offers'">
+          🎯 {{ 'dashboard.tabOffers' | t }}
         </button>
       </div>
 
@@ -125,7 +131,7 @@ import { LettersTab } from './letters-tab.component';
                     (blur)="commitRename(cv.id, renameInput.value)"
                   />
                 } @else {
-                  <a [routerLink]="['/editor', cv.id]" class="truncate text-sm font-medium text-slate-800 hover:underline dark:text-slate-100">{{ cv.name }}</a>
+                  <a [routerLink]="['/editor', cv.id]" class="truncate text-sm font-medium text-slate-800 hover:underline dark:text-slate-100">@if (cv.jobOfferId) {<span [title]="'dashboard.tailoredBadge' | t">🎯 </span>}{{ cv.name }}</a>
                 }
                 <p class="mt-0.5 truncate text-[11px] text-slate-400 dark:text-slate-500">{{ cv.updatedAt | date: 'dd/MM/yy HH:mm:ss' }}</p>
                 <div class="mt-1.5 flex gap-2.5 text-xs text-slate-500 dark:text-slate-400">
@@ -163,8 +169,10 @@ import { LettersTab } from './letters-tab.component';
         </app-modal>
       }
 
-      } @else {
+      } @else if (tab() === 'letters') {
         <app-letters-tab />
+      } @else {
+        <app-offers-tab />
       }
     </main>
   `,
@@ -175,7 +183,8 @@ export class Dashboard implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
 
-  readonly tab = signal<'cvs' | 'letters'>('cvs');
+  private readonly route = inject(ActivatedRoute);
+  readonly tab = signal<'cvs' | 'letters' | 'offers'>('cvs');
   readonly cvs = signal<CvSummary[]>([]);
   readonly thumbnails = signal<Record<string, string>>({});
   readonly renamingId = signal<string | null>(null);
@@ -194,6 +203,8 @@ export class Dashboard implements OnInit, OnDestroy {
   );
 
   async ngOnInit(): Promise<void> {
+    const t = this.route.snapshot.queryParamMap.get('tab');
+    if (t === 'letters' || t === 'offers') this.tab.set(t);
     await this.reload();
   }
 
