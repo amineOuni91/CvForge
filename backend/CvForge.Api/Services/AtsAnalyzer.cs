@@ -13,6 +13,8 @@ public record AtsAnalysisResult(
     int OverallScore,
     List<AtsRuleResult> Rules);
 
+public record OfferMatchResult(int? Score, List<string> Found, List<string> Missing);
+
 /// <summary>
 /// Deterministic ATS scoring (C# rules, not an LLM) — reproducible and explainable: the same CV
 /// always yields the same score. Recommendations are the plain rule failure messages.
@@ -76,6 +78,35 @@ public static partial class AtsAnalyzer
         var overallScore = (int)Math.Round((atsScore + contentScore + technicalSkillsScore + experienceScore) / 4.0);
 
         return new AtsAnalysisResult(atsScore, contentScore, technicalSkillsScore, experienceScore, overallScore, rules);
+    }
+
+    /// <summary>Deterministic tech match: tag lists by exact equality, free text by whole-token regex.</summary>
+    public static OfferMatchResult MatchOffer(CvDocument cv, IEnumerable<string> technologies)
+    {
+        var techs = technologies.Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+        var tags = cv.SkillCategories.SelectMany(c => c.Skills)
+            .Concat(cv.Experiences.SelectMany(e => e.Technologies))
+            .Concat(cv.Projects.SelectMany(p => p.Technologies))
+            .Select(t => t.Trim()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var text = string.Join("\n", new[] { cv.Summary, cv.PersonalInfo.JobTitle }
+            .Concat(cv.Experiences.SelectMany(e => e.Missions.Concat(e.Achievements).Append(e.Description)))
+            .Concat(cv.Projects.Select(p => p.Description)));
+
+        var found = new List<string>();
+        var missing = new List<string>();
+        foreach (var tech in techs)
+        {
+            var hit = tags.Contains(tech) || Regex.IsMatch(text,
+                @"(?<![\w#+.])" + Regex.Escape(tech) + @"(?![\w#+])",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            (hit ? found : missing).Add(tech);
+        }
+
+        int? score = techs.Count == 0 ? null : (int)Math.Round(100.0 * found.Count / techs.Count);
+        return new OfferMatchResult(score, found, missing);
     }
 
     private static bool IsDateRangeConsistent(Experience exp) =>
