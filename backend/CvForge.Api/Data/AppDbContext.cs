@@ -8,6 +8,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
 {
     public DbSet<Cv> Cvs => Set<Cv>();
     public DbSet<CoverLetter> CoverLetters => Set<CoverLetter>();
+    public DbSet<JobOffer> JobOffers => Set<JobOffer>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -22,6 +23,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
         {
             entity.HasIndex(c => new { c.UserId, c.UpdatedAt });
             entity.HasOne<AppUser>().WithMany().HasForeignKey(c => c.UserId).OnDelete(DeleteBehavior.Cascade);
+            // NoAction: SQL Server rejects SET NULL (multiple cascade paths User->Cvs / User->JobOffers->Cvs); detach in C# before deleting an offer.
+            entity.HasOne<JobOffer>().WithMany().HasForeignKey(c => c.JobOfferId).OnDelete(DeleteBehavior.NoAction);
 
             entity.OwnsOne(c => c.Document, document =>
             {
@@ -48,6 +51,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
                 document.OwnsOne(d => d.Settings);
                 document.OwnsOne(d => d.Sender);
                 document.OwnsOne(d => d.Recipient);
+            });
+        });
+
+        builder.Entity<JobOffer>(entity =>
+        {
+            entity.HasIndex(o => new { o.UserId, o.UpdatedAt });
+            entity.HasOne<AppUser>().WithMany().HasForeignKey(o => o.UserId).OnDelete(DeleteBehavior.Cascade);
+
+            entity.OwnsOne(o => o.Document, document =>
+            {
+                document.ToJson();
+                document.OwnsMany(d => d.Steps);
             });
         });
 

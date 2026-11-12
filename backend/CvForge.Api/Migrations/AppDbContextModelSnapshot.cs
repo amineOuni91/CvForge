@@ -130,6 +130,9 @@ namespace CvForge.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("JobOfferId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -143,9 +146,34 @@ namespace CvForge.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("JobOfferId");
+
                     b.HasIndex("UserId", "UpdatedAt");
 
                     b.ToTable("Cvs");
+                });
+
+            modelBuilder.Entity("CvForge.Api.Domain.JobOffer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "UpdatedAt");
+
+                    b.ToTable("JobOffers");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -498,6 +526,11 @@ namespace CvForge.Api.Migrations
 
             modelBuilder.Entity("CvForge.Api.Domain.Cv", b =>
                 {
+                    b.HasOne("CvForge.Api.Domain.JobOffer", null)
+                        .WithMany()
+                        .HasForeignKey("JobOfferId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("CvForge.Api.Domain.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -808,6 +841,112 @@ namespace CvForge.Api.Migrations
                                 .IsRequired();
 
                             b1.Navigation("SkillCategories");
+                        });
+
+                    b.Navigation("Document")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CvForge.Api.Domain.JobOffer", b =>
+                {
+                    b.HasOne("CvForge.Api.Domain.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsOne("CvForge.Api.Domain.OfferDocument", "Document", b1 =>
+                        {
+                            b1.Property<Guid>("JobOfferId");
+
+                            b1.Property<string>("Company")
+                                .IsRequired();
+
+                            b1.Property<string>("ContractType")
+                                .IsRequired();
+
+                            b1.Property<string>("Description")
+                                .IsRequired();
+
+                            b1.Property<string>("Location")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Missions")
+                                .IsRequired();
+
+                            b1.Property<string>("Notes")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Requirements")
+                                .IsRequired();
+
+                            b1.Property<string>("Status")
+                                .IsRequired();
+
+                            b1.PrimitiveCollection<string>("Technologies")
+                                .IsRequired();
+
+                            b1.Property<string>("Title")
+                                .IsRequired();
+
+                            b1.Property<string>("Url")
+                                .IsRequired();
+
+                            b1.HasKey("JobOfferId");
+
+                            b1.ToTable("JobOffers");
+
+                            b1
+                                .ToJson("Document")
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.WithOwner()
+                                .HasForeignKey("JobOfferId");
+
+                            b1.OwnsMany("CvForge.Api.Domain.OfferStep", "Steps", b2 =>
+                                {
+                                    b2.Property<Guid>("OfferDocumentJobOfferId");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAddOrUpdate();
+
+                                    b2.Property<string>("Contact")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Date");
+
+                                    b2.Property<string>("Format")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Id");
+
+                                    b2.Property<string>("Label")
+                                        .IsRequired();
+
+                                    b2.Property<string>("NoteAfter")
+                                        .IsRequired();
+
+                                    b2.Property<string>("NoteBefore")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Place")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Result")
+                                        .IsRequired();
+
+                                    b2.Property<string>("Type")
+                                        .IsRequired();
+
+                                    b2.HasKey("OfferDocumentJobOfferId", "__synthesizedOrdinal");
+
+                                    b2.ToTable("JobOffers");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("OfferDocumentJobOfferId");
+                                });
+
+                            b1.Navigation("Steps");
                         });
 
                     b.Navigation("Document")

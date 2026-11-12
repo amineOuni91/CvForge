@@ -12,4 +12,8 @@ public static class CvAuthorization
     /// <summary>Same guarantee as LoadOwnedCvAsync, for cover letters.</summary>
     public static Task<CoverLetter?> LoadOwnedLetterAsync(this AppDbContext db, string userId, Guid letterId) =>
         db.CoverLetters.FirstOrDefaultAsync(c => c.Id == letterId && c.UserId == userId);
+
+    /// <summary>Same guarantee as LoadOwnedCvAsync, for job offers.</summary>
+    public static Task<JobOffer?> LoadOwnedOfferAsync(this AppDbContext db, string userId, Guid offerId) =>
+        db.JobOffers.FirstOrDefaultAsync(o => o.Id == offerId && o.UserId == userId);
 }
