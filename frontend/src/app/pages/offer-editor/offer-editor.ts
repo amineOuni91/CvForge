@@ -6,14 +6,16 @@ import { formatScore } from '../../core/offer-utils';
 import { I18nService } from '../../core/i18n.service';
 import { ToastService } from '../../core/toast.service';
 import { TPipe } from '../../core/t.pipe';
+import { Skeleton } from '../../ui/skeleton';
 import { TagInput } from '../../ui/tag-input';
+import { OfferSteps } from './offer-steps.component';
 
 const INPUT = 'mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100';
 const CARD = 'rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800';
 
 @Component({
   selector: 'app-offer-editor',
-  imports: [RouterLink, TPipe, TagInput],
+  imports: [RouterLink, TPipe, TagInput, OfferSteps, Skeleton],
   template: `
     <main class="min-h-screen bg-slate-100 p-8 dark:bg-slate-900">
       <header class="mb-6 flex items-center justify-between">
@@ -36,7 +38,9 @@ const CARD = 'rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800';
         </button>
       </div>
 
-      @if (store.document(); as doc) {
+      @if (showSkeleton()) {
+        <app-skeleton extraClass="h-96 w-full" />
+      } @else if (store.document(); as doc) {
         @if (tab() === 'ad') {
           <div class="grid gap-6 text-slate-800 lg:grid-cols-3 dark:text-slate-100">
             <div class="space-y-6 lg:col-span-2">
@@ -112,8 +116,7 @@ const CARD = 'rounded-lg bg-white p-6 shadow-sm dark:bg-slate-800';
             </aside>
           </div>
         } @else {
-          <!-- Task 9 fills this panel with <app-offer-steps /> -->
-          <div></div>
+          <app-offer-steps />
         }
         @if (pickOpen()) {
           <!-- Task 10 fills this with <app-pick-base-cvs /> -->
@@ -130,10 +133,12 @@ export class OfferEditor implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(I18nService);
 
+  private readonly routeId = this.route.snapshot.paramMap.get('id');
   readonly tab = signal<'ad' | 'steps'>('ad');
   readonly pickOpen = signal(false);
   readonly statuses: OfferStatus[] = ['toApply', 'applied', 'interview', 'rejected'];
-  readonly stepCount = computed(() => this.store.document()?.steps.length ?? 0);
+  readonly showSkeleton = computed(() => this.store.loading() || this.store.offerId() !== this.routeId);
+  readonly stepCount =computed(() => this.store.document()?.steps.length ?? 0);
   readonly saveLabel = computed(() => {
     switch (this.store.saveState()) {
       case 'saving': return this.i18n.t('offerEditor.saving');
@@ -149,7 +154,7 @@ export class OfferEditor implements OnInit {
     const q = this.route.snapshot.queryParamMap;
     if (q.get('tab') === 'steps') this.tab.set('steps');
     if (q.get('pick') === '1') this.pickOpen.set(true);
-    const id = this.route.snapshot.paramMap.get('id');
+    const id = this.routeId;
     if (!id) return;
     this.store.load(id).catch(() => {
       this.toast.error(this.i18n.t('offerEditor.loadError'));
