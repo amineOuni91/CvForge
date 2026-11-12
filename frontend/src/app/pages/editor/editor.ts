@@ -1,6 +1,10 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Component, computed, effect, inject, OnInit, signal, untracked } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CvStore } from '../../editor/cv-store';
+import { OfferStore } from '../../editor/offer-store';
+import { OfferPanel } from '../../editor/offer-panel.component';
+import { I18nService } from '../../core/i18n.service';
+import { formatScore } from '../../core/offer-utils';
 import { SectionList } from '../../editor/section-list.component';
 import { PreviewPane } from '../../editor/preview-pane.component';
 import { CustomizationPanel } from '../../editor/customization-panel.component';
@@ -13,20 +17,36 @@ import { TemplateHostComponent } from '../../templates/template-host.component';
 
 @Component({
   selector: 'app-editor',
-  imports: [SectionList, PreviewPane, CustomizationPanel, AtsPanel, RouterLink, Skeleton, TPipe, TemplateHostComponent],
+  imports: [SectionList, PreviewPane, CustomizationPanel, AtsPanel, RouterLink, Skeleton, TPipe, TemplateHostComponent, OfferPanel],
   template: `
     <div class="flex h-screen flex-col">
       <header class="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2 dark:border-slate-700 dark:bg-slate-800">
         <div class="flex items-center gap-3">
           @if (store.adminUserId(); as adminUserId) {
             <a routerLink="/admin" [queryParams]="{ expand: adminUserId }" class="text-sm text-slate-500 hover:underline dark:text-slate-400">{{ 'editor.backToAdmin' | t }}</a>
+          } @else if (linkedOfferId(); as offerId) {
+            <a [routerLink]="['/offers', offerId]" class="text-sm text-slate-500 hover:underline dark:text-slate-400">← {{ 'offerPanel.backToOffer' | t }}</a>
           } @else {
             <a routerLink="/dashboard" class="text-sm text-slate-500 hover:underline dark:text-slate-400">← CvForge</a>
           }
-          <span class="font-medium text-slate-800 dark:text-slate-100">{{ store.name() }}</span>
+          @if (linkedOfferId() && offers.cvs().length) {
+            <select [title]="'offerPanel.cvsOfOffer' | t" (change)="switchCv($any($event.target).value)"
+                    class="max-w-xs rounded border border-slate-300 bg-white px-2 py-1 text-sm font-semibold dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100">
+              @for (c of offers.cvs(); track c.id) {
+                <option [value]="c.id" [selected]="c.id === store.cvId()">{{ c.language === 'en' ? '🇬🇧' : '🇫🇷' }} {{ c.name }}{{ c.score === null ? '' : ' · ' + score(c.score) }}</option>
+              }
+              <option value="__add">+ {{ 'offerPanel.addCv' | t }}</option>
+            </select>
+          } @else {
+            <span class="font-medium text-slate-800 dark:text-slate-100">{{ store.name() }}</span>
+          }
         </div>
         <div class="flex items-center gap-3">
           <span class="text-sm text-slate-500 dark:text-slate-400">{{ saveLabel() }}</span>
+          @if (linkedOfferId()) {
+            <button type="button" (click)="offerOpen.set(!offerOpen())" [title]="'offerPanel.toggle' | t"
+                    class="rounded border border-slate-300 px-3 py-1.5 text-sm text-slate-700 dark:border-slate-600 dark:text-slate-200">📋 {{ 'offerPanel.title' | t }}</button>
+          }
           <select
             [value]="store.exportFormat()"
             (change)="store.exportFormat.set($any($event.target).value)"
@@ -64,6 +84,7 @@ import { TemplateHostComponent } from '../../templates/template-host.component';
         </div>
       } @else {
         <div class="flex flex-1 overflow-hidden">
+          @if (linkedOfferId() && offerOpen()) { <app-offer-panel /> }
           <div [class]="editPanelClass()">
             <div class="flex border-b border-slate-200 dark:border-slate-700">
               <button type="button" (click)="leftTab.set('content')"
@@ -128,6 +149,28 @@ export class Editor implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
   protected readonly auth = inject(AuthService);
+  protected readonly offers = inject(OfferStore);
+  private readonly router = inject(Router);
+  private readonly i18n = inject(I18nService);
+  protected score = formatScore;
+
+  readonly offerOpen = signal(true);
+  // Offers API is owner-only: never expose offer UI when an admin edits someone else's CV.
+  readonly linkedOfferId = computed(() => (this.store.adminUserId() ? null : this.store.jobOfferId()));
+
+  constructor() {
+    effect(() => {
+      const offerId = this.linkedOfferId();
+      if (offerId && this.offers.offerId() !== offerId) {
+        untracked(() => this.offers.load(offerId).catch(() => this.toast.error(this.i18n.t('offerPanel.loadError'))));
+      }
+    });
+    effect(() => {
+      if (this.store.saveState() === 'saved' && this.linkedOfferId()) {
+        untracked(() => this.offers.reloadCvs().catch(() => undefined));
+      }
+    });
+  }
 
   readonly accountUnconfirmed = computed(
     () => this.auth.currentUser()?.emailConfirmed === false && this.auth.currentUser()?.role !== 'admin',
@@ -159,9 +202,23 @@ export class Editor implements OnInit {
   });
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    const adminUserId = this.route.snapshot.paramMap.get('userId') ?? undefined;
-    if (id) this.store.load(id, adminUserId);
+    // paramMap (not snapshot): the CV switcher navigates /editor/:id -> /editor/:id2 reusing this component.
+    this.route.paramMap.subscribe((params) => {
+      const id = params.get('id');
+      const adminUserId = params.get('userId') ?? undefined;
+      if (id) this.store.load(id, adminUserId);
+    });
+  }
+
+  protected async switchCv(value: string): Promise<void> {
+    const offerId = this.linkedOfferId();
+    if (value === '__add' && offerId) {
+      await this.store.saveNow();
+      this.router.navigate(['/offers', offerId], { queryParams: { pick: 1 } });
+      return;
+    }
+    await this.store.saveNow();
+    this.router.navigate(['/editor', value]);
   }
 
   async download(): Promise<void> {

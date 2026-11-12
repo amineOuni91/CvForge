@@ -21,6 +21,7 @@ export class CvStore {
   readonly downloadingPdf = signal(false);
   readonly exportFormat = signal<ExportFormat>('pdf');
   readonly adminUserId = signal<string | null>(null);
+  readonly jobOfferId = signal<string | null>(null);
 
   private saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -31,6 +32,7 @@ export class CvStore {
       const cv = await firstValueFrom(this.http.get<CvDto>(`${this.baseUrl()}/${id}`));
       this.cvId.set(cv.id);
       this.name.set(cv.name);
+      this.jobOfferId.set(cv.jobOfferId ?? null);
       this.document.set(cv.document);
       this.saveState.set('idle');
     } finally {

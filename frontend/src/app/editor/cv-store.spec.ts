@@ -77,6 +77,18 @@ describe('CvStore', () => {
     expect(store.saveState()).toBe('idle');
   });
 
+  it('load() exposes jobOfferId from the API (null when absent)', async () => {
+    const p1 = store.load('cv-1');
+    httpMock.expectOne(`${API_BASE_URL}/api/cvs/cv-1`).flush({ ...makeCvDto(), jobOfferId: 'offer-9' });
+    await p1;
+    expect(store.jobOfferId()).toBe('offer-9');
+
+    const p2 = store.load('cv-1');
+    httpMock.expectOne(`${API_BASE_URL}/api/cvs/cv-1`).flush(makeCvDto());
+    await p2;
+    expect(store.jobOfferId()).toBeNull();
+  });
+
   it('load() with an adminUserId targets the admin CV endpoint for every subsequent call', async () => {
     const loadPromise = store.load('cv-1', 'user-42');
     const req = httpMock.expectOne(`${API_BASE_URL}/api/admin/users/user-42/cvs/cv-1`);
